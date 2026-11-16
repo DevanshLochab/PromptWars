@@ -1,9 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useProfile } from '@/lib/store/ProfileProvider';
+import { getDefaultDemoProfile } from '@/lib/store/profileStore';
 import { ImpactReceipt } from '@/components/receipt/ImpactReceipt';
-import { Receipt } from '@/lib/schemas';
+import { Action, HouseholdProfile, Receipt } from '@/lib/schemas';
+import { useTranslation } from '@/lib/i18n';
+import actionsData from '@/data/actions.json';
+import emissionFactorsData from '@/data/emission_factors.json';
+import {
+  createReceiptForAction,
+  computeHourlyIndoor,
+  computeMemberExposure,
+} from '@/lib/engine';
 
 interface ScenarioDef {
   id: string;
@@ -11,349 +20,610 @@ interface ScenarioDef {
   category: string;
   description: string;
   costLabel: string;
-  costValue: number; // monthly or daily cost in INR
+  costValue: number; // daily or monthly normalized cost in INR
   exposureAvoidedUgM3: number;
   receipt: Receipt;
 }
 
-const PRESET_SCENARIOS: Record<string, { title: string; scenarioA: ScenarioDef; scenarioB: ScenarioDef }> = {
-  'car-vs-metro': {
-    title: '🚗 Solo Car vs 🚇 Metro Transit',
-    scenarioA: {
-      id: 'solo_car',
-      name: 'Scenario A: Drive Solo Car',
-      category: 'Commute',
-      description: '15 km daily city commute driving a petrol sedan with AC on recirculate.',
-      costLabel: '₹250 / day (fuel + toll + parking)',
-      costValue: 250,
-      exposureAvoidedUgM3: 60,
-      receipt: {
-        id: 'rcpt_whatif_car',
-        actionId: 'drive_solo_car',
-        memberIds: ['m1'],
-        formulaId: 'vehicle_cabin_exposure',
-        breathe: {
-          metric: 'pm25_exposure_reduction_pct',
-          before: 180,
-          after: 120,
-          deltaPct: -33.3,
-          unit: 'µg/m³',
-          low: 100,
-          high: 140,
-        },
-        give: {
-          pm25_g: 0,
-          co2e_g: 0,
-          period: 'daily',
-        },
-        cost: { upfront: 0, ongoing: 250, currency: 'INR' },
-        effort: 2,
-        evidence: 'B',
-        confidence: 'high',
-        assumptions: [
-          { label: 'Cabin filter rating', value: 'Standard cabin mesh', source: 'OEM cabin air filter' },
-          { label: 'Tailpipe emissions generated', value: '145g PM2.5 / day', source: 'ARAI vehicle factor' },
-        ],
-      },
-    },
-    scenarioB: {
-      id: 'metro_transit',
-      name: 'Scenario B: Delhi Metro Transit',
-      category: 'Commute',
-      description: '15 km daily commute on high-speed underground Metro rail with station filtration.',
-      costLabel: '₹50 / day (Metro Smart Card)',
-      costValue: 50,
-      exposureAvoidedUgM3: 125,
-      receipt: {
-        id: 'rcpt_whatif_metro',
-        actionId: 'metro_transit_shift',
-        memberIds: ['m1'],
-        formulaId: 'metro_transit_filtration',
-        breathe: {
-          metric: 'pm25_exposure_reduction_pct',
-          before: 180,
-          after: 55,
-          deltaPct: -69.4,
-          unit: 'µg/m³',
-          low: 45,
-          high: 70,
-        },
-        give: {
-          pm25_g: 145,
-          co2e_g: 2200,
-          period: 'daily',
-        },
-        cost: { upfront: 0, ongoing: 50, currency: 'INR' },
-        effort: 3,
-        evidence: 'A',
-        confidence: 'high',
-        assumptions: [
-          { label: 'Underground air filtration', value: 'MERV-13 central HVAC', source: 'DMRC station standard' },
-          { label: 'Urban tailpipe PM avoided', value: '145g / day', source: 'CPCB emission inventory' },
-          { label: 'Greenhouse gas avoided', value: '2.2 kg CO₂e / day', source: 'EEA transit factors' },
-        ],
-      },
-    },
-  },
-
-  'purifier-vs-diy': {
-    title: '🏢 Commercial Purifier vs 📦 DIY Box Fan',
-    scenarioA: {
-      id: 'commercial_hepa',
-      name: 'Scenario A: Commercial HEPA Purifier',
-      category: 'Purification',
-      description: 'Brand-name HEPA air purifier with 250 m³/h clean air delivery rate.',
-      costLabel: '₹8,500 upfront + ₹1,500/yr filter',
-      costValue: 275, // amortized monthly
-      exposureAvoidedUgM3: 278,
-      receipt: {
-        id: 'rcpt_whatif_commercial_purifier',
-        actionId: 'commercial_hepa_purifier',
-        memberIds: ['m1', 'm2', 'm3', 'm4'],
-        formulaId: 'hepa_purification',
-        breathe: {
-          metric: 'pm25_exposure_reduction_pct',
-          before: 320,
-          after: 42,
-          deltaPct: -86.8,
-          unit: 'µg/m³',
-          low: 35,
-          high: 55,
-        },
-        give: {
-          pm25_g: 0,
-          co2e_g: 0,
-          period: 'daily',
-        },
-        cost: { upfront: 8500, ongoing: 125, currency: 'INR' },
-        effort: 1,
-        evidence: 'A',
-        confidence: 'high',
-        assumptions: [
-          { label: 'Clean Air Delivery Rate', value: '250', unit: 'm³/h', source: 'AHAM certified specification' },
-          { label: 'HEPA single-pass efficiency', value: '99.97', unit: '%', source: 'EN 1822 standard' },
-        ],
-      },
-    },
-    scenarioB: {
-      id: 'diy_corsi_box',
-      name: 'Scenario B: DIY Box Fan (Corsi-Rosenthal)',
-      category: 'Purification',
-      description: 'Standard residential box fan sealed with 4 MERV-13 furnace filter panels.',
-      costLabel: '₹2,200 upfront + ₹800/yr filters',
-      costValue: 120, // amortized monthly
-      exposureAvoidedUgM3: 292,
-      receipt: {
-        id: 'rcpt_whatif_diy_purifier',
-        actionId: 'diy_corsi_rosenthal_box',
-        memberIds: ['m1', 'm2', 'm3', 'm4'],
-        formulaId: 'diy_box_fan_purification',
-        breathe: {
-          metric: 'pm25_exposure_reduction_pct',
-          before: 320,
-          after: 28,
-          deltaPct: -91.2,
-          unit: 'µg/m³',
-          low: 20,
-          high: 38,
-        },
-        give: {
-          pm25_g: 0,
-          co2e_g: 0,
-          period: 'daily',
-        },
-        cost: { upfront: 2200, ongoing: 65, currency: 'INR' },
-        effort: 3,
-        evidence: 'B',
-        confidence: 'high',
-        assumptions: [
-          { label: 'Effective CADR', value: '420', unit: 'm³/h', source: 'UC Davis / EPA Corsi-Rosenthal bench study' },
-          { label: 'Electrical safety', value: 'Fused motor fan', source: 'Underwriters Laboratories UL 507' },
-        ],
-      },
-    },
-  },
-
-  'heater-vs-layers': {
-    title: '🔥 Unvented Heater vs 🧤 Thermal Layers',
-    scenarioA: {
-      id: 'gas_heater',
-      name: 'Scenario A: Run Fuel Flame Heater',
-      category: 'Indoor Sources',
-      description: 'Burning unvented gas or charcoal angithi indoors during chilly winter nights.',
-      costLabel: '₹80 / day fuel cost',
-      costValue: 80,
-      exposureAvoidedUgM3: -190, // worsens exposure!
-      receipt: {
-        id: 'rcpt_whatif_gas_heater',
-        actionId: 'unvented_flame_heater',
-        memberIds: ['m1', 'm2', 'm3', 'm4'],
-        formulaId: 'indoor_combustion_source',
-        breathe: {
-          metric: 'pm25_exposure_increase_pct',
-          before: 120,
-          after: 310,
-          deltaPct: 158.3,
-          unit: 'µg/m³',
-          low: 250,
-          high: 400,
-        },
-        give: {
-          pm25_g: 0,
-          period: 'daily',
-        },
-        cost: { upfront: 0, ongoing: 80, currency: 'INR' },
-        effort: 1,
-        evidence: 'D',
-        confidence: 'high',
-        assumptions: [
-          { label: 'Unvented combustion emission', value: 'High PM2.5 + lethal CO risk', source: 'WHO Household Air Pollution' },
-        ],
-      },
-    },
-    scenarioB: {
-      id: 'thermal_layers',
-      name: 'Scenario B: Blankets & Thermal Layers',
-      category: 'Indoor Sources',
-      description: 'Turn off combustion heaters completely; use layered woolens and quilts.',
-      costLabel: '₹0 / day (Zero fuel cost)',
-      costValue: 0,
-      exposureAvoidedUgM3: 35,
-      receipt: {
-        id: 'rcpt_whatif_thermal_layers',
-        actionId: 'blankets_and_thermal_layers',
-        memberIds: ['m1', 'm2', 'm3', 'm4'],
-        formulaId: 'zero_combustion_indoor',
-        breathe: {
-          metric: 'pm25_exposure_reduction_pct',
-          before: 120,
-          after: 85,
-          deltaPct: -29.2,
-          unit: 'µg/m³',
-          low: 70,
-          high: 95,
-        },
-        give: {
-          pm25_g: 0,
-          period: 'daily',
-        },
-        cost: { upfront: 0, ongoing: 0, currency: 'INR' },
-        effort: 1,
-        evidence: 'A',
-        confidence: 'high',
-        assumptions: [
-          { label: 'Zero carbon monoxide', value: '0 ppm CO', source: 'Elimination of combustion source' },
-        ],
-      },
-    },
-  },
-
-  'mask-vs-nomask': {
-    title: '😷 N95 Respirator vs 🧣 Cloth Bandana',
-    scenarioA: {
-      id: 'cloth_bandana',
-      name: 'Scenario A: Cloth Mask / Handkerchief',
-      category: 'Personal Protection',
-      description: 'Single-layer cotton handkerchief or cloth face mask during two-wheeler commute.',
-      costLabel: '₹0 (existing cloth)',
-      costValue: 0,
-      exposureAvoidedUgM3: 20,
-      receipt: {
-        id: 'rcpt_whatif_cloth_mask',
-        actionId: 'cloth_mask_commute',
-        memberIds: ['m1'],
-        formulaId: 'cloth_mask_filtration',
-        breathe: {
-          metric: 'pm25_exposure_reduction_pct',
-          before: 380,
-          after: 360,
-          deltaPct: -5.3,
-          unit: 'µg/m³',
-          low: 350,
-          high: 375,
-        },
-        give: { pm25_g: 0, period: 'daily' },
-        cost: { upfront: 0, ongoing: 0, currency: 'INR' },
-        effort: 1,
-        evidence: 'D',
-        confidence: 'high',
-        assumptions: [
-          { label: 'Cotton weave particle capture', value: '<10%', source: 'NIOSH / CDC mask filtration studies' },
-        ],
-      },
-    },
-    scenarioB: {
-      id: 'n95_respirator',
-      name: 'Scenario B: Sealed NIOSH N95 Respirator',
-      category: 'Personal Protection',
-      description: 'Certified electrostatically charged meltblown N95 respirator with tight nose seal.',
-      costLabel: '₹40 / mask (₹8 / commute day)',
-      costValue: 8,
-      exposureAvoidedUgM3: 304,
-      receipt: {
-        id: 'rcpt_whatif_n95_respirator',
-        actionId: 'n95_during_motorcycle_auto_commute',
-        memberIds: ['m1'],
-        formulaId: 'n95_commute_filtration',
-        breathe: {
-          metric: 'pm25_exposure_reduction_pct',
-          before: 380,
-          after: 76,
-          deltaPct: -80.0,
-          unit: 'µg/m³',
-          low: 65,
-          high: 95,
-        },
-        give: { pm25_g: 0, period: 'daily' },
-        cost: { upfront: 200, ongoing: 40, currency: 'INR' },
-        effort: 2,
-        evidence: 'A',
-        confidence: 'high',
-        assumptions: [
-          { label: 'Filter media rating', value: '95% @ 0.3µm', source: 'NIOSH 42 CFR 84 certification' },
-          { label: 'Real-world fit-factor adjustment', value: '80% effective', source: 'Occupational hygiene chamber testing' },
-        ],
-      },
-    },
-  },
-};
+interface ComparisonPreset {
+  key: string;
+  title: string;
+  shortTitle: string;
+  scenarioA: ScenarioDef;
+  scenarioB: ScenarioDef;
+}
 
 export default function WhatIfPage() {
-  const { profile } = useProfile();
+  const { profile, language } = useProfile();
+  const { t } = useTranslation();
   const [activePresetKey, setActivePresetKey] = useState<string>('car-vs-metro');
 
-  const preset = PRESET_SCENARIOS[activePresetKey] || PRESET_SCENARIOS['car-vs-metro'];
+  const activeProfile: HouseholdProfile = useMemo(() => {
+    return profile || getDefaultDemoProfile();
+  }, [profile]);
+
+  const isHi = language === 'hi';
+
+  // Build scenarios dynamically using user's real profile and physics calculation engine
+  const presets: Record<string, ComparisonPreset> = useMemo(() => {
+    // -------------------------------------------------------------------------
+    // 1. Scenario 1: Solo Car vs Metro Transit ('car-vs-metro')
+    // -------------------------------------------------------------------------
+    const commuter =
+      activeProfile.members.find((m) => ['car', 'two_wheeler'].includes(m.commute?.mode)) ||
+      activeProfile.members[0];
+    const commuterName = commuter?.nickname || (isHi ? 'यात्री' : 'Commuter');
+    const km = Math.max(1, commuter?.commute?.km || 15);
+    const roundTripKm = km * 2;
+
+    const carAction = (actionsData.find((a) => a.id === 'car_to_metro_or_bus') || actionsData[0]) as Action;
+
+    // Real tailpipe emissions avoided dynamically for roundTripKm
+    const carFactors = emissionFactorsData.car_petrol;
+    const metroFactors = emissionFactorsData.metro_electric_per_pax_km;
+    const tailpipePm25AvoidedG =
+      Math.round((carFactors.pm25_g.value - metroFactors.pm25_g.value) * roundTripKm * 10) / 10;
+    const co2eAvoidedG = Math.round((carFactors.co2e_g.value - metroFactors.co2e_g.value) * roundTripKm);
+
+    const carDailyCost = Math.round(roundTripKm * 8.5 + 40);
+    const metroLegFare = Math.min(60, Math.max(20, Math.round(km * 2.2)));
+    const metroDailyCost = metroLegFare * 2;
+
+    const metroReceipt = createReceiptForAction(carAction, activeProfile);
+    metroReceipt.memberIds = commuter ? [commuter.id] : activeProfile.members.map((m) => m.id);
+    metroReceipt.breathe = {
+      metric: 'pm25_exposure_reduction_pct',
+      before: 180,
+      after: 55,
+      deltaPct: -69.4,
+      unit: 'µg/m³',
+      low: 45,
+      high: 70,
+    };
+    metroReceipt.give = {
+      pm25_g: tailpipePm25AvoidedG > 0 ? tailpipePm25AvoidedG : 145,
+      nox_g: Math.round(roundTripKm * 0.048 * 10) / 10,
+      co2e_g: co2eAvoidedG > 0 ? co2eAvoidedG : 2200,
+      period: 'daily',
+      low: Math.round((tailpipePm25AvoidedG > 0 ? tailpipePm25AvoidedG : 145) * 0.8),
+      high: Math.round((tailpipePm25AvoidedG > 0 ? tailpipePm25AvoidedG : 145) * 1.2),
+    };
+    metroReceipt.cost = { upfront: 0, ongoing: metroDailyCost, currency: 'INR' };
+    metroReceipt.assumptions = [
+      {
+        label: isHi ? 'दैनिक राउंड-ट्रिप दूरी' : 'Daily round-trip distance',
+        value: `${roundTripKm}`,
+        unit: 'km',
+        source: `${commuterName}'s commute profile (${km} km each way)`,
+      },
+      {
+        label: isHi ? 'भूमिगत वायु निस्पंदन' : 'Underground air filtration',
+        value: 'MERV-13 central HVAC',
+        source: 'DMRC station standard',
+      },
+      {
+        label: isHi ? 'रोका गया टेलपाइप PM2.5' : 'Urban tailpipe PM avoided',
+        value: `${tailpipePm25AvoidedG}g / day`,
+        source: 'CPCB / ARAI vehicle factors',
+      },
+      {
+        label: isHi ? 'रोकी गई ग्रीनहाउस गैसें' : 'Avoided greenhouse gas',
+        value: `${(co2eAvoidedG / 1000).toFixed(1)} kg CO₂e / day`,
+        source: 'EEA transit factors',
+      },
+    ];
+
+    const carReceipt: Receipt = {
+      id: 'rcpt_whatif_car',
+      actionId: 'car_to_metro_or_bus',
+      memberIds: commuter ? [commuter.id] : activeProfile.members.map((m) => m.id),
+      formulaId: 'vehicle_cabin_exposure',
+      breathe: {
+        metric: 'pm25_exposure_reduction_pct',
+        before: 180,
+        after: 120,
+        deltaPct: -33.3,
+        unit: 'µg/m³',
+        low: 100,
+        high: 140,
+      },
+      give: { pm25_g: 0, nox_g: 0, co2e_g: 0, period: 'daily', low: 0, high: 0 },
+      cost: { upfront: 0, ongoing: carDailyCost, currency: 'INR' },
+      effort: 2,
+      evidence: 'B',
+      confidence: 'high',
+      assumptions: [
+        {
+          label: isHi ? 'दैनिक कार यात्रा दूरी' : 'Daily car commute distance',
+          value: `${roundTripKm}`,
+          unit: 'km',
+          source: `${commuterName}'s recorded commute`,
+        },
+        {
+          label: isHi ? 'कैबिन फ़िल्टर रेटिंग' : 'Cabin filter rating',
+          value: isHi ? 'मानक मेश फ़िल्टर' : 'Standard OEM cabin mesh',
+          source: 'OEM cabin air filter specification',
+        },
+        {
+          label: isHi ? 'उत्पन्न टेलपाइप उत्सर्जन' : 'Tailpipe emissions generated',
+          value: `${tailpipePm25AvoidedG || 145}g PM2.5 / day`,
+          source: 'ARAI vehicle factor',
+        },
+      ],
+    };
+
+    const carVsMetroScenario: ComparisonPreset = {
+      key: 'car-vs-metro',
+      title: isHi ? '🚗 कार बनाम 🚇 दिल्ली मेट्रो' : '🚗 Solo Car vs 🚇 Metro Transit',
+      shortTitle: isHi ? 'कार बनाम मेट्रो' : 'Car vs Metro',
+      scenarioA: {
+        id: 'solo_car',
+        name: isHi ? 'परिदृश्य ए: अकेले कार चलाना' : 'Scenario A: Drive Solo Car',
+        category: isHi ? 'यात्रा' : 'Commute',
+        description: isHi
+          ? `${commuterName} की ${km} किमी की दैनिक यात्रा (राउंड-ट्रिप ${roundTripKm} किमी), व्यक्तिगत कार में एसी के साथ।`
+          : `${commuterName}'s ${km} km daily city commute (${roundTripKm} km round-trip) driving a personal vehicle with AC.`,
+        costLabel: isHi
+          ? `₹${carDailyCost} / दिन (ईंधन + टोल + पार्किंग)`
+          : `₹${carDailyCost} / day (fuel + toll + parking)`,
+        costValue: carDailyCost,
+        exposureAvoidedUgM3: 60,
+        receipt: carReceipt,
+      },
+      scenarioB: {
+        id: 'metro_transit',
+        name: isHi ? 'परिदृश्य बी: दिल्ली मेट्रो रेल' : 'Scenario B: Delhi Metro Transit',
+        category: isHi ? 'यात्रा' : 'Commute',
+        description: isHi
+          ? `${roundTripKm} किमी की दैनिक यात्रा उच्च गति भूमिगत मेट्रो रेल से, जहां स्टेशन व कोच में एयर फिल्ट्रेशन उपलब्ध है।`
+          : `${roundTripKm} km daily commute on high-speed underground Metro rail with station & coach filtration.`,
+        costLabel: isHi
+          ? `₹${metroDailyCost} / दिन (स्मार्ट कार्ड)`
+          : `₹${metroDailyCost} / day (Metro Smart Card)`,
+        costValue: metroDailyCost,
+        exposureAvoidedUgM3: 125,
+        receipt: metroReceipt,
+      },
+    };
+
+    // -------------------------------------------------------------------------
+    // 2. Scenario 2: Commercial Purifier vs DIY Box Fan ('purifier-vs-diy')
+    // -------------------------------------------------------------------------
+    const roomArea = activeProfile.home.mainRoomAreaM2 || 30;
+    const ceilingHeight = activeProfile.home.ceilingHeightM || 2.7;
+    const roomVolume = Math.round(roomArea * ceilingHeight);
+
+    const outdoorTimeline = [320, 350, 300, 250, 200, 220, 280, 340];
+    const baseIndoor = computeHourlyIndoor(outdoorTimeline, activeProfile, { overrideCADR: 0 });
+    const commIndoor = computeHourlyIndoor(outdoorTimeline, activeProfile, { overrideCADR: 250 });
+    const diyIndoor = computeHourlyIndoor(outdoorTimeline, activeProfile, { overrideCADR: 350 });
+
+    const baseAvg = Math.round(
+      baseIndoor.hourlyIndoor.reduce((a, b) => a + b, 0) / Math.max(1, baseIndoor.hourlyIndoor.length)
+    );
+    const commAvg = Math.round(
+      commIndoor.hourlyIndoor.reduce((a, b) => a + b, 0) / Math.max(1, commIndoor.hourlyIndoor.length)
+    );
+    const diyAvg = Math.round(
+      diyIndoor.hourlyIndoor.reduce((a, b) => a + b, 0) / Math.max(1, diyIndoor.hourlyIndoor.length)
+    );
+
+    const commAvoided = Math.max(1, baseAvg - commAvg);
+    const diyAvoided = Math.max(1, baseAvg - diyAvg);
+
+    const purifierAction = (actionsData.find((a) => a.id === 'purifier_run_high_bedroom_evening') ||
+      actionsData[0]) as Action;
+    const diyAction = (actionsData.find((a) => a.id === 'diy_corsi_rosenthal_box') ||
+      actionsData[0]) as Action;
+
+    const commReceipt = createReceiptForAction(purifierAction, activeProfile);
+    commReceipt.breathe = {
+      metric: 'pm25_exposure_reduction_pct',
+      before: baseAvg,
+      after: commAvg,
+      deltaPct: -Math.round(((baseAvg - commAvg) / Math.max(1, baseAvg)) * 100),
+      unit: 'µg/m³',
+      low: Math.max(5, commAvg - 8),
+      high: commAvg + 12,
+    };
+    commReceipt.cost = { upfront: 8500, ongoing: 125, currency: 'INR' };
+    commReceipt.assumptions = [
+      {
+        label: isHi ? 'कमरे का वास्तविक आयतन' : 'Target room volume',
+        value: `${roomVolume}`,
+        unit: 'm³',
+        source: `Household profile: ${roomArea} m² × ${ceilingHeight} m ceiling`,
+      },
+      {
+        label: isHi ? 'स्वच्छ वायु वितरण दर (CADR)' : 'Clean Air Delivery Rate (CADR)',
+        value: '250',
+        unit: 'm³/h',
+        source: 'AHAM certified specification',
+      },
+      {
+        label: isHi ? 'HEPA एकल-पास दक्षता' : 'HEPA single-pass efficiency',
+        value: '99.97',
+        unit: '%',
+        source: 'EN 1822 standard',
+      },
+    ];
+
+    const diyReceipt = createReceiptForAction(diyAction, activeProfile);
+    diyReceipt.breathe = {
+      metric: 'pm25_exposure_reduction_pct',
+      before: baseAvg,
+      after: diyAvg,
+      deltaPct: -Math.round(((baseAvg - diyAvg) / Math.max(1, baseAvg)) * 100),
+      unit: 'µg/m³',
+      low: Math.max(5, diyAvg - 8),
+      high: diyAvg + 12,
+    };
+    diyReceipt.cost = { upfront: 2200, ongoing: 65, currency: 'INR' };
+    diyReceipt.assumptions = [
+      {
+        label: isHi ? 'कमरे का वास्तविक आयतन' : 'Target room volume',
+        value: `${roomVolume}`,
+        unit: 'm³',
+        source: `Household profile: ${roomArea} m² × ${ceilingHeight} m ceiling`,
+      },
+      {
+        label: isHi ? 'प्रभावी CADR' : 'Effective CADR',
+        value: '350',
+        unit: 'm³/h',
+        source: 'UC Davis / EPA Corsi-Rosenthal bench study',
+      },
+      {
+        label: isHi ? 'फ़िल्टर मीडिया' : 'Filter media setup',
+        value: '4× MERV-13 furnace filters + 20" box fan',
+        source: 'ASHRAE 52.2 standard',
+      },
+    ];
+
+    const purifierVsDiyScenario: ComparisonPreset = {
+      key: 'purifier-vs-diy',
+      title: isHi ? '🏢 ब्रांडेड प्यूरीफायर बनाम 📦 DIY बॉक्स फैन' : '🏢 Commercial Purifier vs 📦 DIY Box Fan',
+      shortTitle: isHi ? 'प्यूरीफायर बनाम DIY' : 'Commercial vs DIY',
+      scenarioA: {
+        id: 'commercial_hepa',
+        name: isHi ? 'परिदृश्य ए: ब्रांडेड HEPA प्यूरीफायर' : 'Scenario A: Commercial HEPA Purifier',
+        category: isHi ? 'वायु शुद्धिकरण' : 'Purification',
+        description: isHi
+          ? `250 m³/h स्वच्छ वायु वितरण दर (CADR) वाला ब्रांड-नाम HEPA प्यूरीफायर (${roomArea} m² कमरे के लिए)।`
+          : `Brand-name HEPA air purifier with 250 m³/h clean air delivery rate for ${roomArea} m² room.`,
+        costLabel: isHi
+          ? '₹8,500 एकमुश्त + ₹1,500/वर्ष फ़िल्टर'
+          : '₹8,500 upfront + ₹1,500/yr filter',
+        costValue: 275, // monthly amortized
+        exposureAvoidedUgM3: commAvoided,
+        receipt: commReceipt,
+      },
+      scenarioB: {
+        id: 'diy_corsi_box',
+        name: isHi ? 'परिदृश्य बी: DIY कोर्सी-रोज़ेंथल बॉक्स' : 'Scenario B: DIY Box Fan (Corsi-Rosenthal)',
+        category: isHi ? 'वायु शुद्धिकरण' : 'Purification',
+        description: isHi
+          ? `4 MERV-13 फर्नेस फिल्टर पैनलों के साथ 20" बॉक्स फैन, जो उच्च 350 m³/h CADR प्रदान करता है।`
+          : `Standard 20" residential box fan sealed with 4 MERV-13 furnace filter panels delivering 350 m³/h CADR.`,
+        costLabel: isHi
+          ? '₹2,200 एकमुश्त + ₹800/वर्ष फ़िल्टर'
+          : '₹2,200 upfront + ₹800/yr filters',
+        costValue: 120, // monthly amortized
+        exposureAvoidedUgM3: diyAvoided,
+        receipt: diyReceipt,
+      },
+    };
+
+    // -------------------------------------------------------------------------
+    // 3. Scenario 3: Combustion Heating vs Layered Warmth ('heater-vs-layers')
+    // -------------------------------------------------------------------------
+    const hasCombustion = activeProfile.home.heating?.some((h) =>
+      ['coal_charcoal', 'wood', 'gas'].includes(h)
+    );
+    const heatingFuel =
+      activeProfile.home.heating?.find((h) => ['coal_charcoal', 'wood', 'gas'].includes(h)) ||
+      'coal_charcoal';
+
+    const layersAction = (actionsData.find(
+      (a) => a.id === 'layered_thermal_clothing_instead_of_combustion_heat'
+    ) || actionsData[0]) as Action;
+
+    const layersReceipt = createReceiptForAction(layersAction, activeProfile);
+    layersReceipt.breathe = {
+      metric: 'pm25_exposure_reduction_pct',
+      before: 120,
+      after: 85,
+      deltaPct: -29.2,
+      unit: 'µg/m³',
+      low: 70,
+      high: 95,
+    };
+    layersReceipt.give = {
+      pm25_g: 7.5,
+      nox_g: 3.0,
+      co2e_g: 2250,
+      period: 'daily',
+      low: 4.5,
+      high: 12,
+    };
+    layersReceipt.cost = { upfront: 0, ongoing: 0, currency: 'INR' };
+    layersReceipt.assumptions = [
+      {
+        label: isHi ? 'शून्य कार्बन मोनोऑक्साइड' : 'Zero Carbon Monoxide',
+        value: '0 ppm CO',
+        source: 'Elimination of combustion source',
+      },
+      {
+        label: isHi ? 'रोका गया इनडोर धुआं' : 'Indoor smoke averted',
+        value: '7.5g PM2.5 / day',
+        source: 'WHO Household Air Pollution Model',
+      },
+    ];
+
+    const flameReceipt: Receipt = {
+      id: 'rcpt_whatif_gas_heater',
+      actionId: 'never_seal_room_with_combustion_heater',
+      memberIds: activeProfile.members.map((m) => m.id),
+      formulaId: 'indoor_combustion_source',
+      breathe: {
+        metric: 'pm25_exposure_increase_pct',
+        before: 120,
+        after: 310,
+        deltaPct: 158.3,
+        unit: 'µg/m³',
+        low: 250,
+        high: 400,
+      },
+      give: { pm25_g: 0, nox_g: 0, co2e_g: 0, period: 'daily', low: 0, high: 0 },
+      cost: { upfront: 0, ongoing: 80, currency: 'INR' },
+      effort: 1,
+      evidence: 'D',
+      confidence: 'high',
+      assumptions: [
+        {
+          label: isHi ? 'दहन उत्सर्जन' : 'Combustion emission',
+          value: isHi ? 'अत्यधिक PM2.5 + जानलेवा CO का खतरा' : 'High PM2.5 + lethal CO risk',
+          source: 'WHO Household Air Pollution Guidelines',
+        },
+        {
+          label: isHi ? 'घर में उपयोग किया गया ईंधन' : 'Profile heating source',
+          value: heatingFuel.replace('_', ' '),
+          source: 'User household profile',
+        },
+      ],
+    };
+
+    const heaterVsLayersScenario: ComparisonPreset = {
+      key: 'heater-vs-layers',
+      title: isHi
+        ? '🔥 अनवेंटेड हीटर बनाम 🧤 गर्म कपड़े व रजाई'
+        : '🔥 Unvented Heater vs 🧤 Thermal Layers',
+      shortTitle: isHi ? 'हीटर बनाम गर्म कपड़े' : 'Heater vs Layers',
+      scenarioA: {
+        id: 'gas_heater',
+        name: isHi ? 'परिदृश्य ए: अनवेंटेड अंगीठी/गैस हीटर' : 'Scenario A: Run Fuel Flame Heater',
+        category: isHi ? 'इनडोर स्रोत' : 'Indoor Sources',
+        description: isHi
+          ? `सर्दियों की रातों में घर के अंदर बिना वेंटिलेशन वाली कोयला अंगीठी, लकड़ी या गैस हीटर जलाना।`
+          : `Burning unvented gas, coal, or charcoal angithi indoors during chilly winter nights.`,
+        costLabel: isHi ? '₹80 / दिन ईंधन खर्च' : '₹80 / day fuel cost',
+        costValue: 80,
+        exposureAvoidedUgM3: -190, // worsens exposure
+        receipt: flameReceipt,
+      },
+      scenarioB: {
+        id: 'thermal_layers',
+        name: isHi ? 'परिदृश्य बी: थर्मल वस्त्र व गर्म रजाई' : 'Scenario B: Blankets & Thermal Layers',
+        category: isHi ? 'इनडोर स्रोत' : 'Indoor Sources',
+        description: isHi
+          ? `दहन हीटर को पूरी तरह बंद रखें; ऊनी कपड़े, थर्मल इनर और रजाई का उपयोग करें। शून्य जहरीली गैस।`
+          : `Turn off combustion heaters completely; use layered woolens and quilts. Zero toxic fumes.`,
+        costLabel: isHi ? '₹0 / दिन (शून्य ईंधन खर्च)' : '₹0 / day (Zero fuel cost)',
+        costValue: 0,
+        exposureAvoidedUgM3: 35,
+        receipt: layersReceipt,
+      },
+    };
+
+    // -------------------------------------------------------------------------
+    // 4. Scenario 4: N95 Respirator vs Cloth Mask ('n95-vs-cloth' / 'mask-vs-nomask')
+    // -------------------------------------------------------------------------
+    const outdoorWorker =
+      activeProfile.members.find(
+        (m) => (m.outdoorHoursPerDay ?? 0) > 1 || (m.commute && m.commute.mode !== 'none')
+      ) || activeProfile.members[0];
+    const workerName = outdoorWorker?.nickname || (isHi ? 'सदस्य' : 'Member');
+    const outdoorHours = Math.max(1, outdoorWorker?.outdoorHoursPerDay || 2);
+
+    const outdoorExposureList = [320, 350, 300, 250, 200, 220, 280, 340];
+    const indoorExposureList = [140, 150, 130, 110, 95, 105, 120, 140];
+
+    const clothExp = computeMemberExposure(outdoorWorker, indoorExposureList, outdoorExposureList, {
+      overrideMask: 'cloth',
+    });
+    const n95Exp = computeMemberExposure(outdoorWorker, indoorExposureList, outdoorExposureList, {
+      overrideMask: 'n95',
+    });
+
+    const clothAvg = Math.round(clothExp.totalExposure / 24);
+    const n95Avg = Math.round(n95Exp.totalExposure / 24);
+    const exposureAvoidedN95 = Math.max(1, Math.round(clothExp.totalExposure - n95Exp.totalExposure));
+
+    const n95Action = (actionsData.find((a) => a.id === 'n95_or_ffp2_for_outdoor_commute') ||
+      actionsData[0]) as Action;
+
+    const n95Receipt = createReceiptForAction(n95Action, activeProfile);
+    n95Receipt.memberIds = outdoorWorker ? [outdoorWorker.id] : activeProfile.members.map((m) => m.id);
+    n95Receipt.breathe = {
+      metric: 'pm25_exposure_reduction_pct',
+      before: clothAvg + 120,
+      after: n95Avg,
+      deltaPct: -Math.round(((clothAvg + 120 - n95Avg) / Math.max(1, clothAvg + 120)) * 100),
+      unit: 'µg/m³',
+      low: Math.max(20, n95Avg - 15),
+      high: n95Avg + 20,
+    };
+    n95Receipt.cost = { upfront: 200, ongoing: 40, currency: 'INR' };
+    n95Receipt.assumptions = [
+      {
+        label: isHi ? 'दैनिक बाहरी घंटे' : 'Daily outdoor exposure',
+        value: `${outdoorHours} hrs/day`,
+        source: `${workerName}'s outdoor work & commute schedule`,
+      },
+      {
+        label: isHi ? 'फ़िल्टर दक्षता' : 'Filtration efficiency',
+        value: '95% @ 0.3µm particle capture',
+        source: 'NIOSH 42 CFR 84 / EN 149 FFP2 standard',
+      },
+      {
+        label: isHi ? 'अनुमानित कुल खुराक में कमी' : 'Total 24h exposure averted',
+        value: `${exposureAvoidedN95}`,
+        unit: 'µg·h/m³',
+        source: 'Saans microenvironmental exposure model',
+      },
+    ];
+
+    const clothReceipt: Receipt = {
+      id: 'rcpt_whatif_cloth_mask',
+      actionId: 'n95_or_ffp2_for_outdoor_commute',
+      memberIds: outdoorWorker ? [outdoorWorker.id] : activeProfile.members.map((m) => m.id),
+      formulaId: 'cloth_mask_filtration',
+      breathe: {
+        metric: 'pm25_exposure_reduction_pct',
+        before: clothAvg + 120,
+        after: clothAvg + 100,
+        deltaPct: -8.3,
+        unit: 'µg/m³',
+        low: clothAvg + 90,
+        high: clothAvg + 115,
+      },
+      give: { pm25_g: 0, nox_g: 0, co2e_g: 0, period: 'daily', low: 0, high: 0 },
+      cost: { upfront: 0, ongoing: 0, currency: 'INR' },
+      effort: 1,
+      evidence: 'D',
+      confidence: 'high',
+      assumptions: [
+        {
+          label: isHi ? 'सूती कपड़े की क्षमता' : 'Cotton weave filtration',
+          value: '<10-15% fine aerosol capture',
+          source: 'NIOSH / CDC mask filtration studies',
+        },
+        {
+          label: isHi ? 'कवर किए गए दैनिक घंटे' : 'Exposure duration',
+          value: `${outdoorHours} hrs outdoor`,
+          source: `${workerName}'s daily profile`,
+        },
+      ],
+    };
+
+    const n95VsClothScenario: ComparisonPreset = {
+      key: 'n95-vs-cloth',
+      title: isHi ? '😷 N95 रेस्पिरेटर बनाम 🧣 कपड़ा मास्क' : '😷 N95 Respirator vs 🧣 Cloth Bandana',
+      shortTitle: isHi ? 'N95 बनाम कपड़ा' : 'N95 vs Cloth',
+      scenarioA: {
+        id: 'cloth_bandana',
+        name: isHi ? 'परिदृश्य ए: कपड़े का मास्क / रुमाल' : 'Scenario A: Cloth Mask / Handkerchief',
+        category: isHi ? 'व्यक्तिगत सुरक्षा' : 'Personal Protection',
+        description: isHi
+          ? `${workerName} की दैनिक यात्रा (${outdoorHours} घंटे बाहर) के दौरान साधारण सूती रुमाल या कपड़े का मास्क।`
+          : `Single-layer cotton handkerchief or cloth face mask during ${workerName}'s ${outdoorHours}h outdoor commute.`,
+        costLabel: isHi ? '₹0 (घर में उपलब्ध कपड़ा)' : '₹0 (existing cloth)',
+        costValue: 0,
+        exposureAvoidedUgM3: 20,
+        receipt: clothReceipt,
+      },
+      scenarioB: {
+        id: 'n95_respirator',
+        name: isHi ? 'परिदृश्य बी: सीलबंद N95 रेस्पिरेटर' : 'Scenario B: Sealed NIOSH N95 Respirator',
+        category: isHi ? 'व्यक्तिगत सुरक्षा' : 'Personal Protection',
+        description: isHi
+          ? `प्रमाणित इलेक्ट्रोस्टैटिक मेल्टब्लाउन N95 रेस्पिरेटर, जो महीन जहरीले कणों को 95% तक रोकता है।`
+          : `Certified electrostatically charged meltblown N95 respirator with tight nose seal for ${workerName}.`,
+        costLabel: isHi ? '₹40 / मास्क (₹8 / कार्यदिवस)' : '₹40 / mask (₹8 / commute day)',
+        costValue: 8,
+        exposureAvoidedUgM3: 304,
+        receipt: n95Receipt,
+      },
+    };
+
+    return {
+      'car-vs-metro': carVsMetroScenario,
+      'purifier-vs-diy': purifierVsDiyScenario,
+      'heater-vs-layers': heaterVsLayersScenario,
+      'n95-vs-cloth': n95VsClothScenario,
+      // Alias for backwards compatibility
+      'mask-vs-nomask': n95VsClothScenario,
+    };
+  }, [activeProfile, isHi]);
+
+  const preset = presets[activePresetKey] || presets['car-vs-metro'];
   const scenA = preset.scenarioA;
   const scenB = preset.scenarioB;
 
-  // Cost per µg/m³ avoided calculation
+  // Dynamic Cost-per-Exposure-Avoided Calculator
   const deltaExposure = scenB.exposureAvoidedUgM3 - scenA.exposureAvoidedUgM3;
   const deltaCost = scenB.costValue - scenA.costValue;
+  const exposureAvoidedDiff = Math.max(1, Math.abs(deltaExposure));
+  const costPerUgM3 = Math.round(deltaCost / exposureAvoidedDiff);
+  const costPerUgM3Precise = deltaCost / exposureAvoidedDiff;
+
+  const hasCombustionHeater = activeProfile.home.heating?.some((h) =>
+    ['coal_charcoal', 'wood', 'gas'].includes(h)
+  );
 
   const renderCostEffectiveness = () => {
     if (activePresetKey === 'car-vs-metro') {
+      const dailySavings = Math.abs(deltaCost);
       return (
-        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 space-y-1 text-xs">
-          <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-200 text-sm">
-            <span>💡</span>
-            <span>Exceptional Economic & Air Health Win-Win</span>
+        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 space-y-1.5 text-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-200 text-sm">
+              <span>💡</span>
+              <span>{t('whatif.win_win')}</span>
+            </div>
+            <span className="font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-200 dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100 text-[11px]">
+              -₹{Math.abs(costPerUgM3Precise).toFixed(2)} / µg/m³ {isHi ? '(शुद्ध बचत)' : '(Net Savings)'}
+            </span>
           </div>
           <p className="text-emerald-800 dark:text-emerald-300 leading-relaxed font-medium">
-            Switching from car to Metro saves <strong>₹200 / day</strong> while slashing personal exposure by an additional <strong>65 µg/m³</strong>. This yields a negative net cost of <strong>-₹3.07 per µg/m³ avoided</strong>.
+            {isHi ? (
+              <>
+                कार से मेट्रो पर स्विच करने से प्रतिदिन <strong>₹{dailySavings}</strong> की बचत होती है और व्यक्तिगत जोखिम में अतिरिक्त{' '}
+                <strong>{exposureAvoidedDiff} µg/m³</strong> की कमी आती है। यह <strong>-₹{Math.abs(costPerUgM3Precise).toFixed(2)} प्रति µg/m³</strong> की शुद्ध नकारात्मक लागत देता है (आर्थिक और स्वास्थ्य दोनों में लाभ)।
+              </>
+            ) : (
+              <>
+                Switching from car to Metro saves <strong>₹{dailySavings} / day</strong> while slashing personal exposure by an additional{' '}
+                <strong>{exposureAvoidedDiff} µg/m³</strong>. This yields a negative net cost of <strong>-₹{Math.abs(costPerUgM3Precise).toFixed(2)} per µg/m³ avoided</strong>.
+              </>
+            )}
           </p>
         </div>
       );
     }
 
     if (activePresetKey === 'purifier-vs-diy') {
+      const roomAreaVal = activeProfile.home.mainRoomAreaM2 || 30;
       return (
-        <div className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 space-y-1 text-xs">
-          <div className="flex items-center gap-2 font-bold text-sky-900 dark:text-sky-200 text-sm">
-            <span>💡</span>
-            <span>4× Higher CADR per Rupee Spent</span>
+        <div className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 space-y-1.5 text-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 font-bold text-sky-900 dark:text-sky-200 text-sm">
+              <span>💡</span>
+              <span>{t('whatif.cadr_efficiency')}</span>
+            </div>
+            <span className="font-extrabold px-2.5 py-0.5 rounded-full bg-sky-200 dark:bg-sky-800 text-sky-900 dark:text-sky-100 text-[11px]">
+              ₹{(scenB.costValue / Math.max(1, scenB.exposureAvoidedUgM3)).toFixed(2)} / µg/m³
+            </span>
           </div>
           <p className="text-sky-800 dark:text-sky-300 leading-relaxed font-medium">
-            The DIY Corsi-Rosenthal box costs only <strong>₹0.41 per µg/m³ clean air delivered</strong> compared to ₹0.99 for commercial purifiers, delivering a massive 420 m³/h clean air volume for larger living rooms.
+            {isHi ? (
+              <>
+                DIY कोर्सी-रोज़ेंथल बॉक्स केवल <strong>₹{(scenB.costValue / Math.max(1, scenB.exposureAvoidedUgM3)).toFixed(2)} प्रति µg/m³</strong> स्वच्छ हवा प्रदान करता है, जबकि वाणिज्यिक प्यूरीफायर की लागत ₹{(scenA.costValue / Math.max(1, scenA.exposureAvoidedUgM3)).toFixed(2)} है। यह आपके <strong>{roomAreaVal} m²</strong> कमरे के लिए 350 m³/h का विशाल वायु प्रवाह देता है।
+              </>
+            ) : (
+              <>
+                The DIY Corsi-Rosenthal box costs only <strong>₹{(scenB.costValue / Math.max(1, scenB.exposureAvoidedUgM3)).toFixed(2)} per µg/m³ clean air delivered</strong> compared to ₹{(scenA.costValue / Math.max(1, scenA.exposureAvoidedUgM3)).toFixed(2)} for commercial purifiers, delivering a massive 350 m³/h CADR for your <strong>{roomAreaVal} m²</strong> living space.
+              </>
+            )}
           </p>
         </div>
       );
@@ -361,64 +631,117 @@ export default function WhatIfPage() {
 
     if (activePresetKey === 'heater-vs-layers') {
       return (
-        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 space-y-1 text-xs">
-          <div className="flex items-center gap-2 font-bold text-rose-900 dark:text-rose-200 text-sm">
-            <span>⚠️</span>
-            <span>Life-Safety Elimination: Zero CO Risk</span>
+        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 space-y-1.5 text-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 font-bold text-rose-900 dark:text-rose-200 text-sm">
+              <span>⚠️</span>
+              <span>{t('whatif.life_safety')}</span>
+            </div>
+            <span className="font-extrabold px-2.5 py-0.5 rounded-full bg-rose-200 dark:bg-rose-800 text-rose-900 dark:text-rose-100 text-[11px]">
+              ₹0 Cost / Zero CO
+            </span>
           </div>
           <p className="text-rose-800 dark:text-rose-300 leading-relaxed font-medium">
-            Turning off fuel combustion heaters completely removes the hazard of lethal carbon monoxide accumulation while preventing an indoor particulate spike of 190 µg/m³ — at zero monetary cost.
+            {isHi ? (
+              <>
+                दहन हीटर (अंगीठी/लकड़ी/गैस) को बंद करने से कार्बन मोनोऑक्साइड (CO) का जानलेवा खतरा पूरी तरह समाप्त हो जाता है और इनडोर प्रदूषण में <strong>{Math.abs(scenA.exposureAvoidedUgM3)} µg/m³</strong> का उछाल रुकता है — साथ ही प्रतिदिन <strong>₹{Math.abs(deltaCost)}</strong> की सीधी बचत होती है।
+              </>
+            ) : (
+              <>
+                Turning off fuel combustion heaters completely removes the hazard of lethal carbon monoxide accumulation while preventing an indoor particulate spike of <strong>{Math.abs(scenA.exposureAvoidedUgM3)} µg/m³</strong> — saving <strong>₹{Math.abs(deltaCost)}/day</strong> in fuel costs.
+              </>
+            )}
           </p>
         </div>
       );
     }
 
-    // Mask vs No Mask
+    // N95 vs Cloth Mask
+    const perUgCost = Math.abs(deltaCost) / Math.max(1, exposureAvoidedDiff);
     return (
-      <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 space-y-1 text-xs">
-        <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-200 text-sm">
-          <span>💡</span>
-          <span>Highest ROI Personal Protection Intervention</span>
+      <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 space-y-1.5 text-xs">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-200 text-sm">
+            <span>💡</span>
+            <span>{t('whatif.high_roi')}</span>
+          </div>
+          <span className="font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-200 dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100 text-[11px]">
+            ₹{perUgCost.toFixed(3)} / µg/m³ {isHi ? 'रोकथाम' : 'avoided'}
+          </span>
         </div>
         <p className="text-emerald-800 dark:text-emerald-300 leading-relaxed font-medium">
-          N95 respirators avert <strong>284 µg/m³ more PM2.5</strong> than cloth coverings for just <strong>₹0.026 per µg/m³ avoided</strong>. Cloth masks do not block microscopic airborne particulates.
+          {isHi ? (
+            <>
+              N95 रेस्पिरेटर कपड़े के रुमाल की तुलना में <strong>{exposureAvoidedDiff} µg/m³ अधिक PM2.5</strong> को रोकते हैं, जिसकी लागत केवल <strong>₹{perUgCost.toFixed(3)} प्रति µg/m³</strong> आती है। कपड़े के मास्क महीन सांस लेने योग्य कणों को नहीं रोक पाते।
+            </>
+          ) : (
+            <>
+              N95 respirators avert <strong>{exposureAvoidedDiff} µg/m³ more PM2.5</strong> than cloth coverings for just <strong>₹{perUgCost.toFixed(3)} per µg/m³ avoided</strong>. Cloth masks do not block microscopic airborne particulates.
+            </>
+          )}
         </p>
       </div>
     );
   };
+
+  const PRESET_BUTTONS = [
+    { key: 'car-vs-metro', label: isHi ? '🚗 कार बनाम 🚇 मेट्रो' : '🚗 Solo Car vs 🚇 Metro' },
+    { key: 'purifier-vs-diy', label: isHi ? '🏢 प्यूरीफायर बनाम 📦 DIY बॉक्स' : '🏢 Purifier vs 📦 DIY Box' },
+    { key: 'heater-vs-layers', label: isHi ? '🔥 हीटर बनाम 🧤 गर्म कपड़े' : '🔥 Heater vs 🧤 Layers' },
+    { key: 'n95-vs-cloth', label: isHi ? '😷 N95 बनाम 🧣 कपड़ा मास्क' : '😷 N95 vs 🧣 Cloth Mask' },
+  ];
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-14">
       {/* 1. Header */}
       <div className="space-y-1 border-b border-slate-200/60 dark:border-slate-800 pb-3">
         <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-          Scenario Simulator & Tradeoff Sandbox
+          {t('whatif.title')}
         </h1>
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Compare realistic lifestyle choices side-by-side. Evaluate exposure averted, emissions prevented, and cost-effectiveness.
+          {t('whatif.subtitle')}
         </p>
       </div>
+
+      {/* Profile Combustion Warning Notice */}
+      {hasCombustionHeater && (
+        <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
+          <span className="text-base leading-none">⚠️</span>
+          <div>
+            <span className="font-bold">
+              {isHi ? 'घर की प्रोफ़ाइल सूचना: ' : 'Active Profile Notice: '}
+            </span>
+            <span>
+              {isHi
+                ? 'आपकी प्रोफ़ाइल में दहन हीटिंग (अंगीठी/लकड़ी/गैस) दर्ज है। जीवन रक्षा और CO विषाक्तता से बचाव के लिए "हीटर बनाम गर्म कपड़े" परिदृश्य देखें।'
+                : 'Your home profile lists combustion heating. Check the "Heater vs Layers" comparison to see why eliminating unvented combustion is critical for life safety.'}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* 2. Preset Selector Pills */}
       <div className="space-y-2">
         <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-          Select Comparison Scenario
+          {t('whatif.select_scenario')}
         </span>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {Object.entries(PRESET_SCENARIOS).map(([key, item]) => {
-            const isSelected = activePresetKey === key;
+          {PRESET_BUTTONS.map((item) => {
+            const isSelected =
+              activePresetKey === item.key ||
+              (item.key === 'n95-vs-cloth' && activePresetKey === 'mask-vs-nomask');
             return (
               <button
-                key={key}
+                key={item.key}
                 type="button"
-                onClick={() => setActivePresetKey(key)}
+                onClick={() => setActivePresetKey(item.key)}
                 className={`p-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer text-left border min-h-[44px] flex items-center justify-between ${
                   isSelected
                     ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-slate-900 dark:border-white shadow-xs'
                     : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-300'
                 }`}
               >
-                <span>{item.title}</span>
+                <span>{item.label}</span>
               </button>
             );
           })}
@@ -433,7 +756,7 @@ export default function WhatIfPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <span>⚖️</span>
-            <span>Side-by-Side Impact Receipts</span>
+            <span>{t('whatif.side_by_side')}</span>
           </h2>
           <span className="text-xs font-semibold text-slate-500">
             {preset.title}
@@ -445,15 +768,16 @@ export default function WhatIfPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
               <span className="font-extrabold text-xs uppercase tracking-wider text-rose-600 dark:text-rose-400">
-                Baseline / Alternative A
+                {t('whatif.baseline_a')}
               </span>
               <span className="text-xs text-slate-500">
-                Cost: {scenA.costLabel}
+                {isHi ? 'लागत: ' : 'Cost: '}
+                {scenA.costLabel}
               </span>
             </div>
             <ImpactReceipt
               receipt={scenA.receipt}
-              members={profile?.members}
+              members={activeProfile.members}
               actionTitle={scenA.name}
             />
           </div>
@@ -462,33 +786,34 @@ export default function WhatIfPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
               <span className="font-extrabold text-xs uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Recommended / Intervention B
+                {t('whatif.recommended_b')}
               </span>
               <span className="text-xs text-slate-500">
-                Cost: {scenB.costLabel}
+                {isHi ? 'लागत: ' : 'Cost: '}
+                {scenB.costLabel}
               </span>
             </div>
             <ImpactReceipt
               receipt={scenB.receipt}
-              members={profile?.members}
+              members={activeProfile.members}
               actionTitle={scenB.name}
             />
           </div>
         </div>
       </div>
 
-      {/* 5. Summary Table */}
+      {/* 5. Summary Decision Matrix Table */}
       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-3 shadow-xs text-xs">
         <h3 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 text-sm">
           <span>📊</span>
-          <span>Decision Matrix Summary</span>
+          <span>{t('whatif.decision_matrix')}</span>
         </h3>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
-                <th className="py-2 pr-3 font-semibold">Evaluation Metric</th>
+                <th className="py-2 pr-3 font-semibold">{isHi ? 'मूल्यांकन पैमाना' : 'Evaluation Metric'}</th>
                 <th className="py-2 px-3 font-semibold text-rose-700 dark:text-rose-400">
                   {scenA.name}
                 </th>
@@ -500,7 +825,7 @@ export default function WhatIfPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               <tr>
                 <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
-                  PM2.5 Exposure Level
+                  {t('whatif.metric_exposure')}
                 </td>
                 <td className="py-2.5 px-3 font-bold text-slate-800 dark:text-slate-200">
                   {scenA.receipt.breathe.after} µg/m³
@@ -511,18 +836,22 @@ export default function WhatIfPage() {
               </tr>
               <tr>
                 <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
-                  Airshed Emissions
+                  {t('whatif.metric_airshed')}
                 </td>
                 <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
-                  Adds urban pollution
+                  {isHi ? 'शहरी वायु में प्रदूषण जोड़ता है' : 'Adds urban/indoor emissions'}
                 </td>
                 <td className="py-2.5 pl-3 font-semibold text-emerald-600 dark:text-emerald-400">
-                  Avoids tailpipe/indoor combustion
+                  {scenB.receipt.give?.pm25_g
+                    ? `${scenB.receipt.give.pm25_g}g PM2.5 ${isHi ? 'रोका गया' : 'avoided / day'}`
+                    : isHi
+                    ? 'दहन / टेलपाइप उत्सर्जन से बचाव'
+                    : 'Avoids combustion/tailpipe smoke'}
                 </td>
               </tr>
               <tr>
                 <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
-                  Estimated Direct Cost
+                  {t('whatif.metric_cost')}
                 </td>
                 <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
                   {scenA.costLabel}
@@ -533,11 +862,24 @@ export default function WhatIfPage() {
               </tr>
               <tr>
                 <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
-                  Scientific Evidence
+                  {t('whatif.metric_cost_effectiveness')}
+                </td>
+                <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">
+                  {isHi ? 'आधारभूत' : 'Baseline'}
+                </td>
+                <td className="py-2.5 pl-3 font-bold text-emerald-600 dark:text-emerald-400">
+                  {deltaCost <= 0
+                    ? `-₹${Math.abs(costPerUgM3Precise).toFixed(2)} / µg/m³ (${isHi ? 'शुद्ध आर्थिक बचत' : 'Net Savings'})`
+                    : `₹${costPerUgM3Precise.toFixed(3)} / µg/m³ (${isHi ? 'उच्च ROI' : 'High ROI'})`}
+                </td>
+              </tr>
+              <tr>
+                <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
+                  {t('whatif.metric_evidence')}
                 </td>
                 <td className="py-2.5 px-3">Grade {scenA.receipt.evidence}</td>
                 <td className="py-2.5 pl-3 font-bold text-emerald-600 dark:text-emerald-400">
-                  Grade {scenB.receipt.evidence} (Peer-Reviewed)
+                  Grade {scenB.receipt.evidence} ({isHi ? 'प्रमाणित वैज्ञानिक आधार' : 'Peer-Reviewed Scientific Basis'})
                 </td>
               </tr>
             </tbody>

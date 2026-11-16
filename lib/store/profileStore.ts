@@ -6,13 +6,13 @@ const DEMO_MODE_STORAGE_KEY = 'saans_demo_mode_active';
 
 export function isDemoModeEnabled(): boolean {
   if (typeof window === 'undefined') {
-    return process.env.DEMO_MODE === 'true';
+    return process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
   }
   const stored = localStorage.getItem(DEMO_MODE_STORAGE_KEY);
   if (stored !== null) {
     return stored === 'true';
   }
-  return process.env.NEXT_PUBLIC_DEMO_MODE === 'true' || true; // Default true for initial prototype preview
+  return process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 }
 
 export function setDemoModeEnabled(enabled: boolean): void {

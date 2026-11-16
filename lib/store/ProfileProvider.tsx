@@ -61,13 +61,10 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     const next = enabled !== undefined ? enabled : !isDemoMode;
     setIsDemoMode(next);
     setDemoModeEnabled(next);
-    if (next) {
+    if (next && !profile) {
       const demo = getDefaultDemoProfile();
       setProfileState(demo);
       saveStoredProfile(demo);
-    } else {
-      clearStoredProfile();
-      setProfileState(null);
     }
   };
 

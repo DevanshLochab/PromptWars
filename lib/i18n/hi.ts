@@ -204,4 +204,22 @@ export const hi: Record<string, string> = {
   'common.loading': 'लोड हो रहा है...',
   'common.error': 'कोई अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।',
   'common.estimate_disclaimer': '*सभी संख्याएं वैज्ञानिक भौतिकी अनुमान हैं, कोई चिकित्सीय रीडिंग नहीं।',
+
+  // What-If Sandbox
+  'whatif.title': 'परिदृश्य सिम्युलेटर और ट्रेड-ऑफ सैंडबॉक्स',
+  'whatif.subtitle': 'वास्तविक जीवनशैली विकल्पों की तुलना करें। कम किए गए जोखिम, रोके गए उत्सर्जन और लागत प्रभावशीलता का मूल्यांकन करें।',
+  'whatif.select_scenario': 'तुलना परिदृश्य चुनें',
+  'whatif.side_by_side': 'आमने-सामने असर की रसीदें (Side-by-Side Receipts)',
+  'whatif.decision_matrix': 'निर्णय मैट्रिक्स सारांश',
+  'whatif.metric_exposure': 'PM2.5 जोखिम स्तर',
+  'whatif.metric_airshed': 'वायुमंडल में उत्सर्जन',
+  'whatif.metric_cost': 'अनुमानित प्रत्यक्ष लागत',
+  'whatif.metric_cost_effectiveness': 'प्रति µg/m³ रोकथाम की लागत',
+  'whatif.metric_evidence': 'वैज्ञानिक प्रमाण',
+  'whatif.baseline_a': 'मूल स्थिति / विकल्प ए',
+  'whatif.recommended_b': 'अनुशंसित उपाय / विकल्प बी',
+  'whatif.win_win': 'आर्थिक व स्वास्थ्य दोनों में श्रेष्ठ विजय (Win-Win)',
+  'whatif.high_roi': 'व्यक्तिगत सुरक्षा का सर्वोत्तम निवेश',
+  'whatif.cadr_efficiency': 'प्रति रुपये 4 गुना अधिक स्वच्छ वायु (CADR)',
+  'whatif.life_safety': 'जीवन सुरक्षा: कार्बन मोनोऑक्साइड का शून्य खतरा',
 };

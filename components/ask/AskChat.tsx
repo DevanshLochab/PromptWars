@@ -120,7 +120,7 @@ const SEED_QA: Array<{
 
 export function AskChat() {
   const { t } = useTranslation();
-  const { language } = useProfile();
+  const { profile, language } = useProfile();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'msg_initial_1',
@@ -176,12 +176,12 @@ export function AskChat() {
     try {
       // Attempt API call to /api/ask with timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
 
       const res = await fetch('/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q, language }),
+        body: JSON.stringify({ question: q, profile, language }),
         signal: controller.signal,
       }).catch(() => null);
 

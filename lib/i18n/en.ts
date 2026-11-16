@@ -204,4 +204,22 @@ export const en: Record<string, string> = {
   'common.loading': 'Loading...',
   'common.error': 'An unexpected error occurred. Please try again.',
   'common.estimate_disclaimer': '*All numbers are physics-based estimates with uncertainty intervals, not clinical readings.',
+
+  // What-If Sandbox
+  'whatif.title': 'Scenario Simulator & Tradeoff Sandbox',
+  'whatif.subtitle': 'Compare realistic lifestyle choices side-by-side using physics calculations. Evaluate personal exposure averted, emissions prevented, and cost-effectiveness.',
+  'whatif.select_scenario': 'Select Comparison Scenario',
+  'whatif.side_by_side': 'Side-by-Side Impact Receipts',
+  'whatif.decision_matrix': 'Decision Matrix Summary',
+  'whatif.metric_exposure': 'PM2.5 Exposure Level',
+  'whatif.metric_airshed': 'Airshed Emissions',
+  'whatif.metric_cost': 'Estimated Direct Cost',
+  'whatif.metric_cost_effectiveness': 'Cost per µg/m³ Avoided',
+  'whatif.metric_evidence': 'Scientific Evidence',
+  'whatif.baseline_a': 'Baseline / Alternative A',
+  'whatif.recommended_b': 'Intervention / Recommendation B',
+  'whatif.win_win': 'Exceptional Economic & Air Health Win-Win',
+  'whatif.high_roi': 'High ROI Personal Protection Intervention',
+  'whatif.cadr_efficiency': '4× Higher CADR per Rupee Spent',
+  'whatif.life_safety': 'Life-Safety Elimination: Zero CO Risk',
 };

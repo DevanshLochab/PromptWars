@@ -29,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <script
@@ -47,7 +47,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-sans selection:bg-sky-500 selection:text-white">
+      <body
+        suppressHydrationWarning
+        className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-sans selection:bg-sky-500 selection:text-white"
+      >
         <ProfileProvider>
           <ServiceWorkerRegister />
           <div className="flex-1 flex flex-col max-w-md mx-auto w-full min-h-screen shadow-xs bg-white dark:bg-slate-900 pb-20">
