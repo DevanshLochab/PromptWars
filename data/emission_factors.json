@@ -1,0 +1,236 @@
+{
+  "two_wheeler_petrol": {
+    "pm25_g": {
+      "value": 0.025,
+      "low": 0.015,
+      "high": 0.04,
+      "unit": "g/km",
+      "source": "ICCT India BS-VI emission factors 2019",
+      "confidence": "medium"
+    },
+    "nox_g": {
+      "value": 0.15,
+      "low": 0.1,
+      "high": 0.25,
+      "unit": "g/km",
+      "source": "ICCT 2019",
+      "confidence": "medium"
+    },
+    "co2e_g": {
+      "value": 40.0,
+      "low": 30.0,
+      "high": 55.0,
+      "unit": "g/km",
+      "source": "ICCT 2019",
+      "confidence": "high"
+    }
+  },
+  "car_petrol": {
+    "pm25_g": {
+      "value": 0.005,
+      "low": 0.002,
+      "high": 0.01,
+      "unit": "g/km",
+      "source": "ICCT Euro 6/BS-VI 2020",
+      "confidence": "high"
+    },
+    "nox_g": {
+      "value": 0.06,
+      "low": 0.04,
+      "high": 0.08,
+      "unit": "g/km",
+      "source": "ICCT 2020",
+      "confidence": "high"
+    },
+    "co2e_g": {
+      "value": 170.0,
+      "low": 140.0,
+      "high": 210.0,
+      "unit": "g/km",
+      "source": "ICCT 2020",
+      "confidence": "high"
+    }
+  },
+  "car_diesel": {
+    "pm25_g": {
+      "value": 0.045,
+      "low": 0.02,
+      "high": 0.07,
+      "unit": "g/km",
+      "source": "ICCT Euro 6/BS-VI 2020",
+      "confidence": "medium"
+    },
+    "nox_g": {
+      "value": 0.4,
+      "low": 0.2,
+      "high": 0.6,
+      "unit": "g/km",
+      "source": "ICCT 2020",
+      "confidence": "medium"
+    },
+    "co2e_g": {
+      "value": 155.0,
+      "low": 130.0,
+      "high": 180.0,
+      "unit": "g/km",
+      "source": "ICCT 2020",
+      "confidence": "high"
+    }
+  },
+  "bus_diesel_per_pax_km": {
+    "pm25_g": {
+      "value": 0.006,
+      "low": 0.003,
+      "high": 0.01,
+      "unit": "g/pax-km",
+      "source": "UITP 2020",
+      "confidence": "medium"
+    },
+    "nox_g": {
+      "value": 0.12,
+      "low": 0.08,
+      "high": 0.18,
+      "unit": "g/pax-km",
+      "source": "UITP 2020",
+      "confidence": "medium"
+    },
+    "co2e_g": {
+      "value": 25.0,
+      "low": 18.0,
+      "high": 35.0,
+      "unit": "g/pax-km",
+      "source": "UITP 2020",
+      "confidence": "high"
+    }
+  },
+  "auto_cng": {
+    "pm25_g": {
+      "value": 0.002,
+      "low": 0.001,
+      "high": 0.005,
+      "unit": "g/km",
+      "source": "CPCB CNG auto study 2018",
+      "confidence": "medium"
+    },
+    "nox_g": {
+      "value": 0.05,
+      "low": 0.03,
+      "high": 0.08,
+      "unit": "g/km",
+      "source": "CPCB 2018",
+      "confidence": "medium"
+    },
+    "co2e_g": {
+      "value": 55.0,
+      "low": 40.0,
+      "high": 70.0,
+      "unit": "g/km",
+      "source": "CPCB 2018",
+      "confidence": "medium"
+    }
+  },
+  "metro_electric_per_pax_km": {
+    "pm25_g": {
+      "value": 0.001,
+      "low": 0.0005,
+      "high": 0.002,
+      "unit": "g/pax-km",
+      "source": "DMRC sustainability report 2020",
+      "confidence": "low"
+    },
+    "nox_g": {
+      "value": 0.01,
+      "low": 0.005,
+      "high": 0.02,
+      "unit": "g/pax-km",
+      "source": "DMRC 2020",
+      "confidence": "low"
+    },
+    "co2e_g": {
+      "value": 10.0,
+      "low": 6.0,
+      "high": 15.0,
+      "unit": "g/pax-km",
+      "source": "DMRC 2020",
+      "confidence": "medium"
+    }
+  },
+  "waste_burning_per_kg": {
+    "pm25_g": {
+      "value": 5.0,
+      "low": 3.0,
+      "high": 8.0,
+      "unit": "g/kg",
+      "source": "WHO ambient air pollution guidelines",
+      "confidence": "medium"
+    },
+    "nox_g": {
+      "value": 2.0,
+      "low": 1.0,
+      "high": 3.5,
+      "unit": "g/kg",
+      "source": "WHO guidelines",
+      "confidence": "low"
+    },
+    "co2e_g": {
+      "value": 1500.0,
+      "low": 1000.0,
+      "high": 2000.0,
+      "unit": "g/kg",
+      "source": "IPCC AR5",
+      "confidence": "medium"
+    }
+  },
+  "biomass_cooking_per_meal": {
+    "pm25_g": {
+      "value": 0.5,
+      "low": 0.3,
+      "high": 0.8,
+      "unit": "g/meal",
+      "source": "WHO indoor air quality guidelines 2014",
+      "confidence": "medium"
+    },
+    "nox_g": {
+      "value": 0.1,
+      "low": 0.05,
+      "high": 0.2,
+      "unit": "g/meal",
+      "source": "WHO 2014",
+      "confidence": "low"
+    },
+    "co2e_g": {
+      "value": 500.0,
+      "low": 300.0,
+      "high": 700.0,
+      "unit": "g/meal",
+      "source": "IPCC AR5",
+      "confidence": "medium"
+    }
+  },
+  "lpg_cooking_per_meal": {
+    "pm25_g": {
+      "value": 0.02,
+      "low": 0.01,
+      "high": 0.04,
+      "unit": "g/meal",
+      "source": "WHO 2014",
+      "confidence": "high"
+    },
+    "nox_g": {
+      "value": 0.05,
+      "low": 0.03,
+      "high": 0.08,
+      "unit": "g/meal",
+      "source": "WHO 2014",
+      "confidence": "medium"
+    },
+    "co2e_g": {
+      "value": 200.0,
+      "low": 150.0,
+      "high": 250.0,
+      "unit": "g/meal",
+      "source": "IPCC AR5",
+      "confidence": "high"
+    }
+  }
+}

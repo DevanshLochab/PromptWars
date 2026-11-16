@@ -1,0 +1,62 @@
+{
+  "lpg_cooking": {
+    "pm25_ug_per_h": {
+      "value": 2000,
+      "low": 1000,
+      "high": 3000,
+      "unit": "µg/h",
+      "source": "WHO indoor air quality guidelines 2014",
+      "confidence": "medium"
+    }
+  },
+  "biomass_cooking": {
+    "pm25_ug_per_h": {
+      "value": 10000,
+      "low": 5000,
+      "high": 15000,
+      "unit": "µg/h",
+      "source": "WHO 2014",
+      "confidence": "medium"
+    }
+  },
+  "induction_cooking": {
+    "pm25_ug_per_h": {
+      "value": 50,
+      "low": 20,
+      "high": 100,
+      "unit": "µg/h",
+      "source": "Zhang et al. 2019 meta-analysis",
+      "confidence": "high"
+    }
+  },
+  "incense_stick": {
+    "pm25_ug_per_h": {
+      "value": 1000,
+      "low": 500,
+      "high": 1500,
+      "unit": "µg/h",
+      "source": "Jetter et al. 2002 EST",
+      "confidence": "medium"
+    }
+  },
+  "mosquito_coil": {
+    "pm25_ug_per_h": {
+      "value": 1200,
+      "low": 800,
+      "high": 2000,
+      "unit": "µg/h",
+      "source": "Liu et al. 2003",
+      "confidence": "medium"
+    }
+  },
+  "cigarette": {
+    "pm25_ug_per_h": {
+      "value": 3000,
+      "low": 2000,
+      "high": 5000,
+      "unit": "µg/h",
+      "source": "WHO tobacco smoke guidelines",
+      "confidence": "medium"
+    }
+  }
+}

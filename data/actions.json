@@ -1,0 +1,984 @@
+[
+  {
+    "id": "ventilate_when_outdoor_cleaner_than_indoor",
+    "category": "timing_ventilation",
+    "title": "Open windows during cleaner outdoor air windows",
+    "appliesWhen": "outdoor_pm25 < indoor_pm25",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 2,
+    "evidence": "B",
+    "evidenceWhy": "WHO Housing and Health Guidelines (2021) recommend targeted natural ventilation when outdoor air is cleaner than indoor air to flush accumulated indoor pollutants.",
+    "formulaId": "ventilation_flush",
+    "giveFactorIds": [],
+    "whoBenefits": "All household members benefit from reduced indoor CO2 and flushed combustion particulates.",
+    "steps": [
+      "Check the hourly Saans forecast for the daily outdoor PM2.5 trough (typically 12:00-15:00 in winter).",
+      "Confirm outdoor PM2.5 is lower than indoor estimate before opening.",
+      "Open opposite windows or balcony doors for 15-20 minutes to create cross-ventilation.",
+      "Close and latch all windows firmly before outdoor pollution begins its evening surge."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "shift_outdoor_play_to_best_window",
+    "category": "timing_ventilation",
+    "title": "Shift outdoor playtime to the lowest-pollution window",
+    "appliesWhen": "has_children AND aqi > 100",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 1,
+    "evidence": "B",
+    "evidenceWhy": "EPA AirNow and CDC school health guidance recommend scheduling strenuous outdoor activities during daily periods with lowest pollutant concentrations.",
+    "formulaId": "shift_outdoor_hours",
+    "giveFactorIds": [],
+    "whoBenefits": "Children and teenagers whose developing lungs and higher respiration rates make them highly vulnerable.",
+    "steps": [
+      "Check the Saans 24-hour timeline to identify the cleanest 2-hour window (usually 13:00 to 15:00).",
+      "Reschedule park, playground, or sports activities exclusively to this timeframe.",
+      "Limit high-intensity continuous running if AQI is above 150 even during the best window.",
+      "Bring children indoors immediately if haze thickens or early evening inversion begins."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "indoor_active_play_alternatives",
+    "category": "timing_ventilation",
+    "title": "Switch to indoor active play on severe pollution days",
+    "appliesWhen": "has_children AND aqi > 200",
+    "blockedWhen": null,
+    "costBand": "low",
+    "effort": 2,
+    "evidence": "C",
+    "evidenceWhy": "CDC wildfire smoke and air quality guidance recommends substituting outdoor exercise with active indoor games to keep children physically active without high pollutant doses.",
+    "formulaId": "indoor_play_substitution",
+    "giveFactorIds": [],
+    "whoBenefits": "Children and toddlers avoiding deep inhalation of fine particulate matter during play.",
+    "steps": [
+      "Designate an indoor play space with closed windows and active air purification.",
+      "Introduce low-dust active games such as dance routines, yoga, balloon volleyball, or obstacle courses.",
+      "Avoid activities that disturb heavy carpet dust or resuspend floor particles.",
+      "Ensure children stay hydrated in well-filtered indoor air."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "move_exercise_indoors_on_severe_days",
+    "category": "timing_ventilation",
+    "title": "Move workouts indoors during high AQI days",
+    "appliesWhen": "has_exerciser AND aqi > 150",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 1,
+    "evidence": "B",
+    "evidenceWhy": "EPA Air Quality and Outdoor Activity guidance highlights that heavy exercise increases ventilation rates 4-10x, multiplying pollutant deposition in lower airways.",
+    "formulaId": "exercise_indoor_switch",
+    "giveFactorIds": [],
+    "whoBenefits": "Adults, athletes, and anyone engaging in cardiovascular workouts.",
+    "steps": [
+      "Check morning AQI before beginning morning or evening runs/cycles.",
+      "Substitute outdoor sessions with indoor treadmill, stationary bike, resistance training, or yoga.",
+      "Keep room air purifier running on high during indoor cardio.",
+      "If exercising in a gym, verify the facility maintains closed doors and HEPA filtration."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "purifier_run_high_bedroom_evening",
+    "category": "purification",
+    "title": "Run air purifier on high in bedroom 30 minutes before sleep",
+    "appliesWhen": "has_purifier AND aqi > 50",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 1,
+    "evidence": "A",
+    "evidenceWhy": "Multiple randomized crossover trials (Cochrane Review 2021) demonstrate that pre-cleaning bedroom air reduces overnight PM2.5 inhalation by 25-50% and improves sleep cardiovascular markers.",
+    "formulaId": "purifier_preclean_bedroom",
+    "giveFactorIds": [],
+    "whoBenefits": "All family members during 7-9 hours of continuous sleep exposure.",
+    "steps": [
+      "Close bedroom doors and windows firmly 30-45 minutes before bedtime.",
+      "Turn the purifier fan speed to Maximum/Turbo to achieve rapid particulate clearance.",
+      "Switch fan speed to Low or Sleep mode when going to bed to maintain quiet continuous filtration.",
+      "Keep doors closed throughout the night to prevent untreated hallway air from entering."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "purifier_size_check_cadr_vs_room",
+    "category": "purification",
+    "title": "Verify air purifier CADR matches room volume (target 5 ACH)",
+    "appliesWhen": "has_purifier",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 2,
+    "evidence": "A",
+    "evidenceWhy": "Association of Home Appliance Manufacturers (AHAM AC-1) and WHO standards specify delivering at least 4-5 Air Changes per Hour (ACH) for meaningful particulate reduction in smoky environments.",
+    "formulaId": "cadr_room_audit",
+    "giveFactorIds": [],
+    "whoBenefits": "The entire household by preventing false security from undersized air cleaners.",
+    "steps": [
+      "Look up your purifier's clean air delivery rate (CADR in m³/h) on its label or manual.",
+      "Calculate your room volume: Area (m²) × Ceiling height (m) = Volume (m³).",
+      "Multiply Volume by 5 to calculate minimum required CADR (e.g., 20 m² × 2.7m × 5 = 270 m³/h).",
+      "If CADR is below target, either run purifier on highest setting, move it to a smaller closed room, or add a second unit."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "replace_overdue_filter",
+    "category": "purification",
+    "title": "Replace overdue HEPA filter to restore air cleaning performance",
+    "appliesWhen": "has_purifier AND filter_age > 6",
+    "blockedWhen": null,
+    "costBand": "medium",
+    "effort": 2,
+    "evidence": "A",
+    "evidenceWhy": "EPA Residential Air Cleaners Guide confirms that heavily loaded filters increase fan motor pressure, dramatically decreasing effective CADR and air turnover by 50-80%.",
+    "formulaId": "hepa_filter_refresh",
+    "giveFactorIds": [],
+    "whoBenefits": "All room occupants breathing filtered air.",
+    "steps": [
+      "Inspect filter physical discoloration: dark grey/black loading indicates saturated media.",
+      "Purchase genuine OEM or certified H13 replacement filter cartridge.",
+      "Unplug unit, open compartment, and carefully bag the old filter inside a plastic bag to prevent dust release.",
+      "Insert new filter, ensure airtight gasket seating, and reset the unit filter life counter."
+    ],
+    "safetyNotes": [
+      "Wear an N95 mask and gloves when removing saturated filters to avoid inhaling accumulated mold spores and heavy particulates."
+    ]
+  },
+  {
+    "id": "diy_corsi_rosenthal_box",
+    "category": "purification",
+    "title": "Build a Corsi-Rosenthal DIY box filter for high-volume purification",
+    "appliesWhen": "budget_band != 'none' AND NOT has_purifier",
+    "blockedWhen": null,
+    "costBand": "low",
+    "effort": 4,
+    "evidence": "B",
+    "evidenceWhy": "Peer-reviewed aerosol studies (Dal Porto et al. 2022, Environmental Science & Technology) show 4-filter MERV-13 CR boxes achieve 600-800 m³/h CADR at ~20% of commercial HEPA price.",
+    "formulaId": "cr_box_build",
+    "giveFactorIds": [],
+    "whoBenefits": "Budget-conscious households needing high clean air volume for living areas.",
+    "steps": [
+      "Procure one standard 20-inch box fan and four 20x20x2 inch MERV-13 pleated filters.",
+      "Arrange the 4 filters into a hollow square base, with arrows pointing inward toward the center.",
+      "Duct-tape all corner seams firmly to prevent unfiltered air bypass, and tape a cardboard bottom.",
+      "Mount the fan facing upward on top, seal edges thoroughly with duct tape, and run on medium speed."
+    ],
+    "safetyNotes": [
+      "Use only modern BIS/UL certified box fans with fused safety plugs.",
+      "Never leave DIY electrical fans running unattended overnight or when away from home.",
+      "Keep clear of drapery, curtains, and curious children or pets.",
+      "Replace MERV-13 filters every 3 to 6 months depending on ambient smoke levels."
+    ]
+  },
+  {
+    "id": "keep_doors_closed_in_purified_room",
+    "category": "purification",
+    "title": "Keep doors and windows sealed in rooms with active purifiers",
+    "appliesWhen": "has_purifier",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 1,
+    "evidence": "B",
+    "evidenceWhy": "Indoor aerosol modeling demonstrates that an open door introduces untreated ambient infiltration that degrades effective room clean air delivery by 40-60%.",
+    "formulaId": "purifier_room_isolation",
+    "giveFactorIds": [],
+    "whoBenefits": "Occupants of the designated clean room.",
+    "steps": [
+      "Designate one room (such as the main bedroom) as the primary clean refuge.",
+      "Keep bedroom door firmly closed whenever the purifier is operating.",
+      "Place a rolled towel or draft stopper across the gap at the bottom of the door.",
+      "Minimize repeated entry and exit during high ambient pollution periods."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "cooking_exhaust_on_during_and_after",
+    "category": "indoor_sources",
+    "title": "Run kitchen exhaust hood during and 15 minutes after cooking",
+    "appliesWhen": "has_exhaust_hood",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 1,
+    "evidence": "A",
+    "evidenceWhy": "WHO Indoor Air Quality Guidelines (2014) and Lawrence Berkeley National Lab research confirm range hoods capturing cooking plumes cut indoor ultrafine PM and NO2 exposure by 60-85%.",
+    "formulaId": "exhaust_hood_operation",
+    "giveFactorIds": [],
+    "whoBenefits": "The family cook and all family members residing in adjacent living spaces.",
+    "steps": [
+      "Switch on the exhaust hood 1 minute before lighting burners or heating oil.",
+      "Cook on back burners when possible to maximize capture efficiency into the hood.",
+      "Keep kitchen door to living areas closed while cooking.",
+      "Keep exhaust fan running on medium for 15 minutes after extinguishing flame to remove residual aerosols."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "wet_mop_not_dry_sweep",
+    "category": "indoor_sources",
+    "title": "Wet mop hard floors instead of dry sweeping to prevent resuspension",
+    "appliesWhen": "always",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 2,
+    "evidence": "B",
+    "evidenceWhy": "EPA Indoor Air Quality assessments show dry sweeping resuspends 80-90% of coarse and fine dust back into human breathing zones, whereas wet microfiber mopping traps particulates.",
+    "formulaId": "wet_mopping_protocol",
+    "giveFactorIds": [],
+    "whoBenefits": "Children crawling near floor level and members with hyperreactive airways.",
+    "steps": [
+      "Discontinue traditional dry straw or synthetic broom sweeping during smog season.",
+      "Use a damp microfiber flat mop or traditional pocha with clean water.",
+      "Rinse the mop frequently in a bucket to avoid spreading trapped sediment.",
+      "Allow floors to air-dry naturally without blowing fans directly onto dry dust deposits."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "hepa_vacuum",
+    "category": "indoor_sources",
+    "title": "Vacuum rugs and upholstery using a sealed HEPA-filtered vacuum",
+    "appliesWhen": "budget_band != 'none'",
+    "blockedWhen": null,
+    "costBand": "medium",
+    "effort": 2,
+    "evidence": "B",
+    "evidenceWhy": "EPA Residential Air Cleaners guidance notes non-HEPA vacuums act as aerosol distributors by blowing fine allergens and PM2.5 through standard porous exhaust bags.",
+    "formulaId": "hepa_vacuum_protocol",
+    "giveFactorIds": [],
+    "whoBenefits": "Asthmatics and allergy sufferers sensitive to dust mites and fine settled particulates.",
+    "steps": [
+      "Ensure vacuum cleaner features true sealed HEPA filtration on exhaust output.",
+      "Vacuum rugs, mattresses, and cloth sofas 1-2 times weekly with slow overlapping passes.",
+      "Empty vacuum canister outdoors or directly inside a closed trash liner to avoid dust clouds.",
+      "Wash or replace pre-motor and exhaust HEPA filters per manufacturer schedule."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "reduce_incense_and_mosquito_coils",
+    "category": "indoor_sources",
+    "title": "Replace incense sticks and mosquito coils with non-combustion options",
+    "appliesWhen": "incense_or_coils != 'never'",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 2,
+    "evidence": "B",
+    "evidenceWhy": "Aerosol emission research (Jetter et al. 2002; Liu et al. 2003) demonstrates burning 1 mosquito coil releases PM2.5 comparable to 75-100 cigarettes, alongside hazardous polycyclic aromatics.",
+    "formulaId": "combustion_deterrent_switch",
+    "giveFactorIds": [],
+    "whoBenefits": "Entire family, particularly infants and elderly with coronary or pulmonary conditions.",
+    "steps": [
+      "Switch evening mosquito protection to electric vaporizers, physical window netting, or bed nets.",
+      "Replace daily prayer incense with LED diyas, electric camphor diffusers, or fresh flowers.",
+      "If burning incense for ceremonial customs, limit to one small natural stick in a well-ventilated space.",
+      "Extinguish embers immediately after prayer rituals conclude."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "no_smoking_indoors",
+    "category": "indoor_sources",
+    "title": "Enforce strict 100% smoke-free home policy",
+    "appliesWhen": "smoking_indoors == true",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 3,
+    "evidence": "A",
+    "evidenceWhy": "WHO Secondhand Smoke reports affirm there is zero risk-free exposure level to indoor tobacco smoke; one cigarette elevates room PM2.5 above 300 µg/m³ for hours.",
+    "formulaId": "zero_indoor_smoking",
+    "giveFactorIds": [],
+    "whoBenefits": "Non-smoking family members, pregnant women, and developing children.",
+    "steps": [
+      "Establish an unconditional rule: absolutely no smoking inside any room, bathroom, or balcony.",
+      "Designate an outdoor location at least 7 meters away from open windows and entry doors.",
+      "Wash household draperies, sofa covers, and wipe walls to eliminate persistent third-hand chemical residue.",
+      "Support smokers with nicotine replacement therapies or clinical cessation resources."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "avoid_ozone_generating_purifiers",
+    "category": "indoor_sources",
+    "title": "Avoid or disable ionizers and ozone-generating air cleaners",
+    "appliesWhen": "has_purifier",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 1,
+    "evidence": "B",
+    "evidenceWhy": "EPA Hazardous Ozone Generators Advisory and California Air Resources Board (CARB) warn ozone is a severe pulmonary irritant that scars lung tissue even at low parts-per-billion concentrations.",
+    "formulaId": "ozone_safety_check",
+    "giveFactorIds": [],
+    "whoBenefits": "Asthmatics, children, and elderly vulnerable to airway inflammation.",
+    "steps": [
+      "Check your air purifier controls for 'Ionizer', 'Anion', 'Plasma', or 'Ozone' toggles.",
+      "Switch off ionic or UV-ozone functions permanently; rely exclusively on mechanical HEPA and carbon filtration.",
+      "Look for CARB (California Air Resources Board) certification indicating zero ozone emission (<0.050 ppm).",
+      "Discard standalone 'air ozonizers' or 'air sanitizers' that market ozone as an odor eliminator."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "seal_door_and_window_gaps",
+    "category": "indoor_sources",
+    "title": "Seal door and window gaps with removable weatherstripping",
+    "appliesWhen": "window_leakiness != 'tight'",
+    "blockedWhen": "renter AND NOT removable_weatherstrip",
+    "costBand": "low",
+    "effort": 3,
+    "evidence": "B",
+    "evidenceWhy": "Building science studies (Chen & Zhao 2011) show gap sealing reduces unconditioned aerosol infiltration by 30-50%, dramatically lowering indoor deposition from outdoor smog.",
+    "formulaId": "gap_weatherstripping",
+    "giveFactorIds": [],
+    "whoBenefits": "All household members through reduced baseline indoor pollution penetration.",
+    "steps": [
+      "Identify draft leaks by moving an incense stick or candle along window frames and door perimeter on a breezy day.",
+      "Apply self-adhesive EVA foam or silicone weatherstrip tape along matching window sash channels.",
+      "Install a silicone sweep or fabric draft stopper under exterior and corridor doors.",
+      "Ensure seals compress snugly when windows and doors are latched shut."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "switch_biomass_to_lpg_or_induction",
+    "category": "cooking_heating",
+    "title": "Transition from biomass cookstoves to LPG or electric induction",
+    "appliesWhen": "cooking includes 'biomass'",
+    "blockedWhen": null,
+    "costBand": "high",
+    "effort": 4,
+    "evidence": "A",
+    "evidenceWhy": "WHO Guidelines for Indoor Air Quality: Household Fuel Combustion (2014) report biomass stoves cause ~3.8 million premature deaths annually; clean fuel switching cuts cook exposure by 80-95%.",
+    "formulaId": "biomass_clean_cooking_transition",
+    "giveFactorIds": [
+      "biomass_cooking_per_meal",
+      "lpg_cooking_per_meal"
+    ],
+    "whoBenefits": "Primary cooks, infants kept in kitchens, and the entire domestic microenvironment.",
+    "steps": [
+      "Enroll in national clean cooking programs (e.g., PM Ujjwala Yojana) or purchase a dual-burner LPG stove.",
+      "Procure a portable 1800W induction cooktop as a convenient soot-free primary or supplemental burner.",
+      "Phase out indoor storage and combustion of wood, cow dung patties, and agricultural residues.",
+      "Maintain kitchen cross-ventilation while adapting to new clean cooking equipment."
+    ],
+    "safetyNotes": [
+      "Check LPG hose connections with soapy water for bubbles every 6 months. Never ignite flames near suspected gas leaks."
+    ]
+  },
+  {
+    "id": "layered_thermal_clothing_instead_of_combustion_heat",
+    "category": "cooking_heating",
+    "title": "Wear layered thermal clothing instead of indoor coal or wood fires",
+    "appliesWhen": "heating includes 'coal_charcoal' OR heating includes 'wood'",
+    "blockedWhen": null,
+    "costBand": "low",
+    "effort": 2,
+    "evidence": "B",
+    "evidenceWhy": "CDC Carbon Monoxide Prevention warnings emphasize open coal and charcoal braziers (angithis) indoors are the single greatest contributor to lethal winter CO poisoning.",
+    "formulaId": "thermal_layering_heating",
+    "giveFactorIds": [
+      "biomass_cooking_per_meal"
+    ],
+    "whoBenefits": "All family members, especially seniors and small children vulnerable to hypothermia and smoke.",
+    "steps": [
+      "Wear wool or fleece thermal innerwear base layers under regular home clothing.",
+      "Wear wool socks, warm slippers, and lightweight beanies to prevent head heat loss indoors.",
+      "Use insulated microfiber quilts or hot water bottles inside bedding before sleep.",
+      "Completely ban indoor burning of coal, wood, or charcoal briquettes."
+    ],
+    "safetyNotes": [
+      "Never light open coal, wood, or charcoal fires inside enclosed rooms. Deadly CO gas is odorless and invisible."
+    ]
+  },
+  {
+    "id": "electric_heater_with_timer",
+    "category": "cooking_heating",
+    "title": "Upgrade to an oil-filled or radiant electric heater with auto-shutoff",
+    "appliesWhen": "heating includes 'coal_charcoal' OR heating includes 'wood'",
+    "blockedWhen": null,
+    "costBand": "medium",
+    "effort": 2,
+    "evidence": "B",
+    "evidenceWhy": "WHO and US CPSC confirm sealed oil-filled electric radiators produce zero combustion emissions, maintaining warmth without depleting oxygen or releasing carbon monoxide.",
+    "formulaId": "electric_heating_switch",
+    "giveFactorIds": [],
+    "whoBenefits": "Seniors, young children, and individuals with respiratory conditions.",
+    "steps": [
+      "Procure an ISI-certified oil-filled radiator (OFR) or ceramic fan heater with tip-over safety switch.",
+      "Plug heater directly into a dedicated 16A grounded wall socket without extension cords.",
+      "Set built-in thermostat to comfortable 20-22°C and program timer for bedtime pre-heating.",
+      "Maintain a 1-meter clearance around heater away from beds, curtains, and furniture."
+    ],
+    "safetyNotes": [
+      "Use only BIS/ISI certified electric heaters with automatic thermal cutoff.",
+      "Never drape wet clothes or blankets over heaters to dry.",
+      "Do not run electric heating off overloaded multiboards or daisy-chained extension cables."
+    ]
+  },
+  {
+    "id": "install_co_alarm",
+    "category": "cooking_heating",
+    "title": "Install an audible digital carbon monoxide (CO) detector",
+    "appliesWhen": "heating includes 'gas' OR heating includes 'coal_charcoal' OR heating includes 'wood' OR cooking includes 'lpg'",
+    "blockedWhen": null,
+    "costBand": "low",
+    "effort": 2,
+    "evidence": "A",
+    "evidenceWhy": "CDC Carbon Monoxide safety standards mandate certified CO detectors in all residences using gas, LPG, or combustible heating, reducing poisoning fatality risk by over 50%.",
+    "formulaId": "co_alarm_install",
+    "giveFactorIds": [],
+    "whoBenefits": "All household members protected from silent nighttime asphyxiation.",
+    "steps": [
+      "Purchase an EN 50291 or UL 2034 compliant battery-operated digital CO alarm.",
+      "Mount alarm on wall at eye/sleeping level (approx 1.5m), 1-3 meters away from kitchen or heater.",
+      "Press test button monthly to confirm loud 85dB alarm horn and digital screen operate.",
+      "Replace alkaline batteries every 12 months, and replace detector unit every 5-7 years."
+    ],
+    "safetyNotes": [
+      "If alarm sounds continuous warning, immediately evacuate all occupants outdoors and call emergency gas utility services."
+    ]
+  },
+  {
+    "id": "never_seal_room_with_combustion_heater",
+    "category": "cooking_heating",
+    "title": "CRITICAL SAFETY: Never seal a room while running combustion heating",
+    "appliesWhen": "heating includes 'gas' OR heating includes 'coal_charcoal' OR heating includes 'wood'",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 1,
+    "evidence": "A",
+    "evidenceWhy": "WHO, CDC, and National Disaster Management Guidelines classify sealing rooms containing combustion heating as an immediate life threat due to rapid oxygen depletion and fatal CO accumulation.",
+    "formulaId": "combustion_ventilation_lifesafety",
+    "giveFactorIds": [],
+    "whoBenefits": "Every resident in the home — this is a non-negotiable life-safety rule.",
+    "steps": [
+      "Always maintain a continuous 2 to 3 cm window gap or door transom opening when any fuel burner is lit.",
+      "Never sleep with an active flame, LPG heater, or charcoal angithi inside a closed bedroom.",
+      "Extinguish all combustion embers thoroughly and move coals outdoors before going to sleep.",
+      "Educate every family member to recognize acute CO poisoning symptoms: dull headache, nausea, dizziness, confusion."
+    ],
+    "safetyNotes": [
+      "LIFE THREATENING: Burning coal, wood, or gas in a sealed room creates fatal carbon monoxide poisoning within hours.",
+      "If anyone complains of sudden headache, drowsiness, or vomiting while heating is on, move them into fresh outside air immediately and seek emergency medical care.",
+      "Never ignore even subtle dizziness around combustion heaters."
+    ]
+  },
+  {
+    "id": "n95_or_ffp2_for_outdoor_commute",
+    "category": "personal_protection",
+    "title": "Wear a certified N95 or FFP2 respirator during outdoor commutes",
+    "appliesWhen": "aqi > 150 AND commute_mode in ['walk','cycle','two_wheeler','auto']",
+    "blockedWhen": null,
+    "costBand": "low",
+    "effort": 2,
+    "evidence": "B",
+    "evidenceWhy": "Randomized clinical trials (Langrish et al. 2012, European Heart Journal) demonstrate wearing genuine N95 respirators in urban traffic significantly lowers arterial blood pressure and heart rate variability detriments.",
+    "formulaId": "respirator_commute_protection",
+    "giveFactorIds": [],
+    "whoBenefits": "Two-wheeler riders, cyclists, pedestrians, and open-auto passengers.",
+    "steps": [
+      "Select certified NIOSH N95, EN FFP2, or BIS ISI certified particulate respirators.",
+      "Position dual headband straps (one high on crown, one around neck nape) rather than loose earloops.",
+      "Mould metallic noseband snugly across bridge of nose using fingers of both hands.",
+      "Perform negative pressure seal check: inhale sharply; mask should slightly collapse inward without edge leakage."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "mask_fit_check_and_reuse_limits",
+    "category": "personal_protection",
+    "title": "Perform user seal checks and respect respirator reuse limits",
+    "appliesWhen": "mask_owned != 'none'",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 1,
+    "evidence": "A",
+    "evidenceWhy": "NIOSH and CDC respirator research shows facial gaps degrade N95 filtration from ~95% down to ~30%, negating most protection and giving dangerous false security.",
+    "formulaId": "mask_fit_inspection",
+    "giveFactorIds": [],
+    "whoBenefits": "Mask users ensuring their face covering provides rated clinical filtration.",
+    "steps": [
+      "Conduct seal check every single time: cup hands over filter and exhale gently; feel for air leaking onto eyes or chin.",
+      "Ensure clean-shaven face along seal border; facial hair dramatically disrupts respirator contact.",
+      "Store respirator in a breathable paper bag between commutes; never seal damp in plastic.",
+      "Discard respirator after 30-40 hours of active wear, or sooner if stained, deformed, or breathing resistance increases."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "kids_mask_guidance_age_appropriate",
+    "category": "personal_protection",
+    "title": "Apply age-appropriate pediatric respirator guidelines",
+    "appliesWhen": "has_children AND aqi > 150",
+    "blockedWhen": null,
+    "costBand": "low",
+    "effort": 2,
+    "evidence": "B",
+    "evidenceWhy": "American Academy of Pediatrics (AAP) and WHO caution tight respirators are contraindicated for infants due to suffocation risk; older children require specifically sized pediatric frames.",
+    "formulaId": "pediatric_masking_protocol",
+    "giveFactorIds": [],
+    "whoBenefits": "Infants, toddlers, and school-age children.",
+    "steps": [
+      "NEVER place any mask, respirator, or cloth covering on infants or toddlers under 2 years of age.",
+      "For children aged 3-8, utilize pediatric KN95 or KF94 masks designed specifically for small facial contours.",
+      "Prioritize keeping younger children indoors during hazardous AQI over prolonged masking.",
+      "Ensure child can easily breathe and speak while masked, and coach them not to chew or touch the inner lining."
+    ],
+    "safetyNotes": [
+      "ABSOLUTE CONTRAINDICATION: Never place masks or respirators on children under 2 years — poses severe suffocation and asphyxiation risk.",
+      "If a child shows labored breathing, lethargy, or distress, remove mask immediately and bring indoors into filtered air."
+    ]
+  },
+  {
+    "id": "review_asthma_action_plan_with_doctor",
+    "category": "personal_protection",
+    "title": "Review written asthma and COPD action plans with your physician",
+    "appliesWhen": "member_has_condition('asthma')",
+    "blockedWhen": null,
+    "costBand": "low",
+    "effort": 3,
+    "evidence": "A",
+    "evidenceWhy": "Global Initiative for Asthma (GINA 2022) guidelines establish that written personalized action plans reduce pollution-triggered emergency room admissions by up to 70%.",
+    "formulaId": "clinical_action_plan",
+    "giveFactorIds": [],
+    "whoBenefits": "Children and adults diagnosed with asthma, chronic bronchitis, or reactive airway syndrome.",
+    "steps": [
+      "Schedule a consultation with your pulmonologist or pediatrician prior to peak winter smog season.",
+      "Review peak flow meter thresholds and establish clear green, yellow, and red medication zones.",
+      "Verify prescription dosages for maintenance corticosteroid inhalers and fast-acting rescue bronchodilators.",
+      "Ensure school nurses or workplace colleagues have access to a backup rescue inhaler and spacer."
+    ],
+    "safetyNotes": [
+      "Seek emergency hospital care immediately if rescue inhaler fails to relieve severe breathlessness, chest tightness, or blue discoloration of lips."
+    ]
+  },
+  {
+    "id": "avoid_peak_traffic_hours",
+    "category": "commute",
+    "title": "Shift commute times by 30-45 minutes to avoid peak roadside emissions",
+    "appliesWhen": "commute_mode != 'none' AND commute_mode != 'metro'",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 2,
+    "evidence": "B",
+    "evidenceWhy": "Health Effects Institute (HEI Special Report 17) demonstrates vehicle exhaust particle counts and black carbon concentrations are 2-4x higher during rush-hour congestion versus shoulder hours.",
+    "formulaId": "commute_shift_timing",
+    "giveFactorIds": [],
+    "whoBenefits": "Daily commuters reducing transit time and heavy vehicle exhaust exposure.",
+    "steps": [
+      "Coordinate with employer or academic institution for flexible 30-45 minute earlier or later check-in.",
+      "Depart prior to 08:00 or after 10:15 in the morning to bypass peak bumper-to-bumper standstill.",
+      "Choose secondary residential arterial routes rather than crawling directly behind heavy diesel trucks.",
+      "Monitor navigation live traffic overlays to bypass sudden congestion bottlenecks."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "car_to_metro_or_bus",
+    "category": "commute",
+    "title": "Switch solo car commute to metro rail or electric transit",
+    "appliesWhen": "commute_mode == 'car'",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 3,
+    "evidence": "A",
+    "evidenceWhy": "International Association of Public Transport (UITP 2020) data indicates electric metro transit produces 94% lower per-passenger-km emissions than private cars, with lower in-cabin PM exposure.",
+    "formulaId": "transit_modal_shift",
+    "giveFactorIds": [
+      "car_petrol",
+      "metro_electric_per_pax_km"
+    ],
+    "whoBenefits": "The commuter's health and the broader airshed community through emission abatement.",
+    "steps": [
+      "Map your commute route using public transit navigation apps to identify nearest metro stations.",
+      "Purchase a rechargeable smart card or transit pass for seamless turnstile boarding.",
+      "Test the metro commute for 2 days mid-week to evaluate transit comfort and exact door-to-door timing.",
+      "Adopt metro as primary commute mode on high pollution alert days."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "carpool_school_run",
+    "category": "commute",
+    "title": "Organize a neighborhood carpool for school drop-offs and pickups",
+    "appliesWhen": "has_children AND has_car",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 3,
+    "evidence": "B",
+    "evidenceWhy": "EPA SmartWay Transportation Partnership notes school gate vehicle clustering creates localized toxic micro-hotspots; carpooling cuts idling vehicles and per-child trips by 50-75%.",
+    "formulaId": "school_carpool_consolidation",
+    "giveFactorIds": [
+      "car_petrol"
+    ],
+    "whoBenefits": "Children exposed to idling tailpipes at school gates and parent drivers saving fuel.",
+    "steps": [
+      "Connect with 3-4 families living in your immediate residential community with children attending same school.",
+      "Create a weekly driver roster where each parent handles morning or afternoon runs on rotating days.",
+      "Ensure all child passengers wear seatbelts and keep vehicle windows closed with recirculating AC.",
+      "Coordinate pickup arrival times via group messaging to avoid unnecessary idling outside school gates."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "engine_off_when_idling",
+    "category": "commute",
+    "title": "Turn vehicle engine off when waiting at signals or curbside >30 seconds",
+    "appliesWhen": "has_car OR has_two_wheeler",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 1,
+    "evidence": "A",
+    "evidenceWhy": "EPA Clean School Bus and Idle-Reduction evaluations demonstrate restarting uses less fuel than 10 seconds of idling, eliminating concentrated toxic CO and benzene emissions around pedestrians.",
+    "formulaId": "idle_reduction_protocol",
+    "giveFactorIds": [
+      "car_petrol",
+      "two_wheeler_petrol"
+    ],
+    "whoBenefits": "Pedestrians, cyclists, children at crossings, and driver's fuel economy.",
+    "steps": [
+      "Turn off the ignition switch at traffic signals showing red countdown timers greater than 30 seconds.",
+      "Turn off engine immediately while waiting for passengers curbside or outside retail shops.",
+      "Avoid warming up modern vehicle engines for more than 30 seconds in winter; gentle driving warms engines faster.",
+      "Encourage auto-rickshaw and cab drivers to cut engines during prolonged snarls."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "walk_short_trips_only_on_better_air",
+    "category": "commute",
+    "title": "Walk short neighborhood errands only when AQI is moderate or better",
+    "appliesWhen": "aqi < 100",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 1,
+    "evidence": "C",
+    "evidenceWhy": "Health benefit-risk modeling (Tainio et al. 2016, Preventive Medicine) confirms physical exercise benefits outweigh pollution risks when PM2.5 is low, but invert during severe smog episodes.",
+    "formulaId": "walk_trips_clean_window",
+    "giveFactorIds": [
+      "two_wheeler_petrol"
+    ],
+    "whoBenefits": "Adults seeking active mobility without unnecessary particulate inhalation.",
+    "steps": [
+      "Check current ambient AQI before walking to neighborhood grocery markets or errands.",
+      "If AQI is below 100, choose pedestrian walking over two-wheeler or car trips for distances under 1.5 km.",
+      "Walk on internal residential colony lanes rather than along heavily trafficked main ring roads.",
+      "If AQI unexpectedly rises above 150, postpone non-essential walking or wear an N95 mask."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "two_wheeler_to_shared_or_electric_longer_term",
+    "category": "commute",
+    "title": "Plan transition from petrol two-wheeler to electric or shared transit",
+    "appliesWhen": "commute_mode == 'two_wheeler'",
+    "blockedWhen": null,
+    "costBand": "high",
+    "effort": 4,
+    "evidence": "B",
+    "evidenceWhy": "ICCT India Emissions Inventory shows 2-wheelers emit ~5x more PM2.5 and CO per km than BS-VI passenger cars due to engine dynamics; electric two-wheelers eliminate tailpipe emissions entirely.",
+    "formulaId": "ev_twowheeler_transition",
+    "giveFactorIds": [
+      "two_wheeler_petrol"
+    ],
+    "whoBenefits": "The commuter (eliminating roadside tailpipe inhalation) and urban community airshed.",
+    "steps": [
+      "Calculate your monthly petrol expenditure and contrast with electric two-wheeler charging costs.",
+      "Explore state and national EV subsidy schemes (FAME II / PM E-DRIVE) for upfront capital rebate.",
+      "Test ride reliable EV two-wheelers with removable or fast-charging battery packs.",
+      "In the interim, use shared metro or bus connections on high pollution alert days."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "compost_garden_waste_instead_of_burning",
+    "category": "waste_burning",
+    "title": "Compost dry leaves and horticultural waste instead of open burning",
+    "appliesWhen": "always",
+    "blockedWhen": null,
+    "costBand": "low",
+    "effort": 3,
+    "evidence": "A",
+    "evidenceWhy": "CPCB and WHO environmental reports confirm open burning of biomass and fallen leaves produces massive bursts of carcinogenic dioxins, black carbon, and dense PM2.5 at breathing level.",
+    "formulaId": "composting_waste_abatement",
+    "giveFactorIds": [
+      "waste_burning_per_kg"
+    ],
+    "whoBenefits": "Neighborhood residents, ground-floor apartments, and local gardening biodiversity.",
+    "steps": [
+      "Instruct domestic staff and gardeners never to burn dry leaves, twigs, or lawn clippings.",
+      "Create a designated wire-mesh compost pit or drum composter in a garden corner or society compound.",
+      "Layer brown leaves with green vegetable scraps and moisten periodically with water to accelerate decomposition.",
+      "Harvest rich organic humus after 8-12 weeks for potting soil and garden enrichment."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "segregate_waste",
+    "category": "waste_burning",
+    "title": "Segregate dry and wet household waste at source to prevent landfill burning",
+    "appliesWhen": "always",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 2,
+    "evidence": "B",
+    "evidenceWhy": "UNEP Urban Air and Solid Waste reports show unsegregated mixed municipal waste dumping leads to spontaneous landfill fires emitting toxic furans, heavy metals, and persistent smoke.",
+    "formulaId": "waste_segregation_impact",
+    "giveFactorIds": [
+      "waste_burning_per_kg"
+    ],
+    "whoBenefits": "Urban community airshed and sanitation workers handling municipal refuse.",
+    "steps": [
+      "Place separate bins in kitchen: Green for organic wet food waste, Blue for dry recyclables.",
+      "Rinse recyclable plastic bottles, metal cans, and milk pouches before placing in dry bin.",
+      "Dispose of sanitary and hazardous waste in clearly wrapped red bags for separate processing.",
+      "Hand segregated bins to municipal collectors or local informal recycling kabadiwalas."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "report_open_burning",
+    "category": "waste_burning",
+    "title": "Report open waste and leaf burning incidents via citizen grievance apps",
+    "appliesWhen": "always",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 2,
+    "evidence": "B",
+    "evidenceWhy": "CPCB enforcement analyses indicate prompt citizen mobile georeporting reduces smoldering burn time by 65%, preventing localized overnight particulate concentration spikes.",
+    "formulaId": "citizen_burn_reporting",
+    "giveFactorIds": [
+      "waste_burning_per_kg"
+    ],
+    "whoBenefits": "Immediate neighborhood residents downwind of illegal smoldering fires.",
+    "steps": [
+      "Download municipal or state pollution control apps (e.g., Sameer CPCB, Delhi Green, Swachhata).",
+      "Safely capture a geotagged photo of the burning garbage, leaf pile, or plastic waste from a distance.",
+      "Submit the complaint selecting category 'Open Burning' with precise street landmark details.",
+      "Track complaint resolution ticket and escalate to local Resident Welfare Association (RWA) if repeated."
+    ],
+    "safetyNotes": [
+      "Do not confront individuals aggressively or attempt to extinguish large industrial/chemical waste fires without protective equipment."
+    ]
+  },
+  {
+    "id": "report_construction_dust",
+    "category": "waste_burning",
+    "title": "Report uncovered construction dust and demolition violations",
+    "appliesWhen": "always",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 2,
+    "evidence": "C",
+    "evidenceWhy": "CPCB Graded Response Action Plan (GRAP) guidelines mandate green geotextile wind-breaking screens and water misting; reporting enforces dust mitigation protocols.",
+    "formulaId": "construction_dust_mitigation",
+    "giveFactorIds": [],
+    "whoBenefits": "Pedestrians, roadside dwellers, and nearby apartment blocks plagued by coarse silica dust.",
+    "steps": [
+      "Identify non-compliant construction sites operating without green mesh screens or uncovered sand/gravel mounds.",
+      "Photograph the fugitive dust plumes and missing water sprinkling equipment.",
+      "File report via municipal pollution grievance portal or municipal ward helpline.",
+      "Engage your neighborhood building society to require local private contractors to follow dust norms."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "green_festive_alternatives",
+    "category": "waste_burning",
+    "title": "Adopt clean festive celebrations: LED illumination and community gatherings",
+    "appliesWhen": "always",
+    "blockedWhen": null,
+    "costBand": "low",
+    "effort": 2,
+    "evidence": "B",
+    "evidenceWhy": "CSIR-NEERI and CPCB Diwali air quality tracking prove traditional fireworks trigger instantaneous PM2.5 spikes exceeding 1500 µg/m³ with toxic barium, strontium, and sulfur oxides.",
+    "formulaId": "festive_emission_abatement",
+    "giveFactorIds": [],
+    "whoBenefits": "Children, pets, seniors, and hospital intensive care patients across urban centers.",
+    "steps": [
+      "Replace chemical pyrotechnics with Warm LED fairy lights, solar lanterns, and decorative flower rangolis.",
+      "Organize neighborhood cultural performances, music recitals, or shared community feasts instead of firecracker bouts.",
+      "If participating in approved green cracker displays, strictly observe designated 2-hour community windows.",
+      "Keep indoor air purifiers running continuously on high throughout festival nights."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "warm_up_point_or_blanket_drive_instead_of_bonfires",
+    "category": "community",
+    "title": "Organize blanket drives and electric warm-up kiosks for outdoor night guards",
+    "appliesWhen": "always",
+    "blockedWhen": null,
+    "costBand": "medium",
+    "effort": 4,
+    "evidence": "B",
+    "evidenceWhy": "Centre for Science and Environment (CSE) winter pollution studies show roadside biomass and scrap wood bonfires lit for survival warmth account for significant ground-level evening PM2.5 spikes.",
+    "formulaId": "community_warmup_initiative",
+    "giveFactorIds": [
+      "waste_burning_per_kg"
+    ],
+    "whoBenefits": "Outdoor security personnel, sanitation staff, and nearby residential apartments.",
+    "steps": [
+      "Coordinate with building RWA or apartment management to provide electric radiant heaters in guard security booths.",
+      "Run a pre-winter society collection drive for heavy blankets, thermal innerwear, gloves, and insulated jackets.",
+      "Distribute thermos flasks with hot water and tea to night security and sanitation workers.",
+      "Politely request guard staff to retire scrap wood and plastic bonfires in favor of the provided heating amenities."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "check_on_elderly_neighbour",
+    "category": "community",
+    "title": "Check on elderly or frail neighbours during hazardous AQI episodes",
+    "appliesWhen": "aqi > 200",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 1,
+    "evidence": "B",
+    "evidenceWhy": "WHO Health Aspects of Air Pollution notes cardiovascular mortality in seniors rises sharply within 24-48 hours of severe particulate episodes; proactive social check-ins save lives.",
+    "formulaId": "elderly_neighbor_outreach",
+    "giveFactorIds": [],
+    "whoBenefits": "Isolated seniors living alone with cardiovascular, hypertensive, or pulmonary conditions.",
+    "steps": [
+      "Call or knock on doors of elderly neighbors when AQI enters Very Unhealthy or Hazardous tiers.",
+      "Ensure their windows and balcony doors are latched shut and air purifier (if owned) has power.",
+      "Offer to fetch essential groceries, prescription medicines, or clean drinking water to prevent them from venturing out.",
+      "Verify emergency contact numbers for family members or attending cardiologists are posted near their phone."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "ask_school_for_outdoor_activity_policy_by_aqi",
+    "category": "community",
+    "title": "Advocate for an AQI-indexed outdoor physical activity policy at your child's school",
+    "appliesWhen": "has_children",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 3,
+    "evidence": "B",
+    "evidenceWhy": "EPA School Flag Program and AAP recommendations advise mandatory cancellation of outdoor sports and morning assemblies when ambient AQI crosses 150-200 to protect child lung alveoli.",
+    "formulaId": "school_policy_advocacy",
+    "giveFactorIds": [],
+    "whoBenefits": "Entire student body, physical education teachers, and staff members.",
+    "steps": [
+      "Draft a collaborative letter to school principal and Parent-Teacher Association citing WHO and CPCB child air guidelines.",
+      "Request school shift morning assemblies to classrooms or covered auditoriums when AQI > 150.",
+      "Propose replacing vigorous outdoor sports with indoor gym activities whenever AQI exceeds 200.",
+      "Suggest installation of a low-cost calibrated AQI monitor in school lobby with colored safety flags."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "building_level_idling_ban",
+    "category": "community",
+    "title": "Propose an anti-idling policy inside residential society gates",
+    "appliesWhen": "always",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 4,
+    "evidence": "B",
+    "evidenceWhy": "NYC Health Department Anti-Idling evaluations demonstrate campus-level idling bans reduce localized fine particulate concentrations by 15-25% around residential entrances and play lots.",
+    "formulaId": "rwa_anti_idling_ordinance",
+    "giveFactorIds": [
+      "car_petrol",
+      "two_wheeler_petrol"
+    ],
+    "whoBenefits": "Residents on lower floors, pedestrians, and children boarding school buses inside gates.",
+    "steps": [
+      "Table an anti-idling resolution at your Resident Welfare Association (RWA) or society committee meeting.",
+      "Erect clear 'No Idling Beyond 30 Seconds - Clean Air Zone' reflective signage at entry gates and clubhouse.",
+      "Train security gate guards to politely request waiting school cabs, private cars, and delivery vans to cut engines.",
+      "Publish an explanatory educational flyer in society communication channels on fuel savings and cleaner lungs."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "indoor_plants_clean_room_air",
+    "category": "myth_check",
+    "title": "MYTH BUSTED: Indoor plants do NOT clean ambient room particulate pollution",
+    "appliesWhen": "always",
+    "blockedWhen": null,
+    "costBand": "low",
+    "effort": 1,
+    "evidence": "D",
+    "evidenceWhy": "Rigorous aerosol physics reviews (Cummings & Waring 2020, Journal of Exposure Science) debunked the 1989 NASA study: plants achieve CADR of ~0.02 m³/h vs HEPA's 250+ m³/h; you would need 600 plants per room.",
+    "formulaId": "myth_plant_filtration_debunked",
+    "giveFactorIds": [],
+    "whoBenefits": "Consumers avoiding expensive plant setups in the mistaken belief they replace air purifiers.",
+    "steps": [
+      "Recognize that potted plants cannot draw air through their leaves at rates sufficient to filter fine PM2.5 or VOCs in real homes.",
+      "Enjoy houseplants for mental well-being, aesthetics, and humidity moderation rather than air purification.",
+      "Do not rely on snake plants, spider plants, or areca palms as substitutes for mechanical HEPA filtration.",
+      "Avoid damp soil overwatering in stagnant rooms which can cultivate pathogenic fungal spores."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "steam_inhalation_for_smog",
+    "category": "myth_check",
+    "title": "MYTH BUSTED: Inhaling steam does NOT remove PM2.5 particles from lungs",
+    "appliesWhen": "always",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 1,
+    "evidence": "D",
+    "evidenceWhy": "AIIMS and pulmonary medical reviews confirm inhaled fine PM2.5 (<2.5 µm) penetrates deep into microscopic alveoli and enters blood circulation; steam condenses in upper airways and cannot 'wash' alveoli.",
+    "formulaId": "myth_steam_detox_debunked",
+    "giveFactorIds": [],
+    "whoBenefits": "Families avoiding false comfort and steam scald injuries.",
+    "steps": [
+      "Understand that steam inhalation reaches only nasal passages and trachea, not microscopic pulmonary alveoli.",
+      "Use mild steam only if advised by a clinician to hydrate dry upper mucous membranes or soothe sinusitis.",
+      "Never add aggressive chemical oils or camphor into steamers which can induce bronchial spasms.",
+      "Focus personal protective efforts on avoiding inhalation through N95 respirators and HEPA air cleaning."
+    ],
+    "safetyNotes": [
+      "High risk of hot water scalding and facial burns, especially when administering steam to children. Never use boiling pots on beds."
+    ]
+  },
+  {
+    "id": "jaggery_or_herbal_detox_claims",
+    "category": "myth_check",
+    "title": "MYTH BUSTED: Jaggery (Gur) and herbal tonics cannot detoxify lungs from PM2.5",
+    "appliesWhen": "always",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 1,
+    "evidence": "D",
+    "evidenceWhy": "Lancet Commission on Pollution and Health reviews state dietary intake passes through the gastrointestinal tract and cannot intercept or extract particulate matter lodged in respiratory tissues.",
+    "formulaId": "myth_jaggery_detox_debunked",
+    "giveFactorIds": [],
+    "whoBenefits": "Individuals avoiding dietary complacency and diabetic patients avoiding unneeded sugar loads.",
+    "steps": [
+      "Understand the physiological separation between the digestive esophagus and respiratory pulmonary tree.",
+      "Eat jaggery in moderation as a natural culinary sweetener, but recognize it possesses zero lung-cleaning mechanisms.",
+      "Diabetic patients should avoid consuming excessive jaggery doses marketed as 'anti-pollution detox'.",
+      "Prioritize exposure reduction: the only proven way to detoxify is breathing cleaner air."
+    ],
+    "safetyNotes": []
+  },
+  {
+    "id": "wet_cloth_on_window_alone",
+    "category": "myth_check",
+    "title": "MYTH BUSTED: Hanging a wet cloth over windows does NOT filter PM2.5",
+    "appliesWhen": "always",
+    "blockedWhen": null,
+    "costBand": "none",
+    "effort": 1,
+    "evidence": "D",
+    "evidenceWhy": "Aerosol filtration experiments (Cherrie et al. 2018) prove coarse woven fabrics allow >85-90% of sub-micron particles to penetrate directly, with airflow taking path of least resistance around fabric edges.",
+    "formulaId": "myth_wet_cloth_filtration_debunked",
+    "giveFactorIds": [],
+    "whoBenefits": "Households avoiding ineffective DIY barriers and window mold development.",
+    "steps": [
+      "Acknowledge that fine microscopic PM2.5 (0.3 - 2.5 µm) readily slips through the microscopic mesh of woven bedsheets and towels.",
+      "Understand that air flows around the edges of hung cloth through large gap clearances.",
+      "Avoid damp fabrics against window sills which breed allergenic mold in winter.",
+      "Use certified elastomeric weatherstripping to seal window cracks and operate genuine HEPA/MERV-13 filters indoors."
+    ],
+    "safetyNotes": []
+  }
+]
