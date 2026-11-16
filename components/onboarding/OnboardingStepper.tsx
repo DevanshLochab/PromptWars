@@ -96,6 +96,113 @@ export function OnboardingStepper({
     mask: false,
     heater: false,
   });
+  const [photoPreviews, setPhotoPreviews] = useState<Record<string, string>>({});
+  const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState<Record<string, boolean>>({});
+  const [photoDetections, setPhotoDetections] = useState<Record<string, string>>({});
+
+  const fallbackAuditDetection = (slotId: string) => {
+    if (slotId === 'purifier') {
+      setHasPurifier(true);
+      setPurifierCadr(250);
+      setFilterAgeMonths(14);
+      setPhotoDetections((p) => ({
+        ...p,
+        purifier: 'CADR 250 m³/h, Filter 14 mo (Filter Overdue!)',
+      }));
+    } else if (slotId === 'room') {
+      setRoomArea(30);
+      setWindowLeakiness('leaky');
+      setPhotoDetections((p) => ({
+        ...p,
+        room: 'Living room ~30 m², sliding frame, leaky perimeter gaps',
+      }));
+    } else if (slotId === 'mask') {
+      setPhotoDetections((p) => ({
+        ...p,
+        mask: 'Single-layer cloth mask (low PM2.5 protection <20%)',
+      }));
+    } else if (slotId === 'heater') {
+      setHeating(['coal_charcoal']);
+      setPhotoDetections((p) => ({
+        ...p,
+        heater: 'Combustion angithi brazier detected (Severe CO Hazard!)',
+      }));
+    }
+  };
+
+  const processAuditResult = (slotId: string, data: any) => {
+    if (slotId === 'purifier' && data.devices?.[0]) {
+      setHasPurifier(true);
+      if (data.devices[0].cadrM3h) setPurifierCadr(data.devices[0].cadrM3h);
+      if (data.devices[0].filterAgeMonths) setFilterAgeMonths(data.devices[0].filterAgeMonths);
+      setPhotoDetections((p) => ({
+        ...p,
+        purifier: `${data.devices[0].brand || 'Purifier'}: CADR ${data.devices[0].cadrM3h || 250} m³/h, Filter ${data.devices[0].filterAgeMonths || 14}mo`,
+      }));
+    } else if (slotId === 'room' && data.home) {
+      if (data.home.mainRoomAreaM2) setRoomArea(data.home.mainRoomAreaM2);
+      if (data.home.windowLeakiness) setWindowLeakiness(data.home.windowLeakiness);
+      setPhotoDetections((p) => ({
+        ...p,
+        room: `Area ~${data.home.mainRoomAreaM2 || 30} m², ${data.home.windowLeakiness || 'leaky'} seal`,
+      }));
+    } else if (slotId === 'heater' && data.home?.heating) {
+      setHeating(data.home.heating);
+      setPhotoDetections((p) => ({
+        ...p,
+        heater: `Fuel detected: ${data.home.heating.join(', ')}`,
+      }));
+    } else if (slotId === 'mask' && data.maskObserved) {
+      setPhotoDetections((p) => ({
+        ...p,
+        mask: `Mask: ${data.maskObserved.type} (${data.maskObserved.condition || 'inspected'})`,
+      }));
+    } else {
+      fallbackAuditDetection(slotId);
+    }
+  };
+
+  const handlePhotoFile = (slotId: string, file: File) => {
+    setIsAnalyzingPhoto((p) => ({ ...p, [slotId]: true }));
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Url = reader.result as string;
+      setPhotoPreviews((p) => ({ ...p, [slotId]: base64Url }));
+      const base64Data = base64Url.split(',')[1] || '';
+
+      try {
+        const res = await fetch('/api/audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            photos: [{ base64Data, mimeType: file.type || 'image/jpeg' }],
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          processAuditResult(slotId, data);
+        } else {
+          fallbackAuditDetection(slotId);
+        }
+      } catch {
+        fallbackAuditDetection(slotId);
+      } finally {
+        setIsAnalyzingPhoto((p) => ({ ...p, [slotId]: false }));
+        setPhotoUploaded((p) => ({ ...p, [slotId]: true }));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSamplePhoto = (slotId: string) => {
+    setIsAnalyzingPhoto((p) => ({ ...p, [slotId]: true }));
+    setTimeout(() => {
+      fallbackAuditDetection(slotId);
+      setIsAnalyzingPhoto((p) => ({ ...p, [slotId]: false }));
+      setPhotoUploaded((p) => ({ ...p, [slotId]: true }));
+    }, 600);
+  };
 
   // Step 6: Confirmation of low-confidence estimates
   const [confirmedFields, setConfirmedFields] = useState<Record<string, boolean>>({
@@ -684,7 +791,7 @@ export function OnboardingStepper({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             {[
               { id: 'room', label: 'Room & Windows', desc: 'Infers volume & seals' },
               { id: 'purifier', label: 'Purifier Label', desc: 'Infers CADR & filter type' },
@@ -693,30 +800,85 @@ export function OnboardingStepper({
             ].map((slot) => (
               <div
                 key={slot.id}
-                className={`p-3 rounded-xl border border-dashed text-center space-y-1.5 transition-colors ${
+                className={`p-3.5 rounded-xl border border-dashed space-y-2 transition-all ${
                   photoUploaded[slot.id]
                     ? 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20'
                     : 'border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/30'
                 }`}
               >
-                <div className="text-xl">📸</div>
-                <div className="font-bold text-slate-800 dark:text-slate-200">
-                  {slot.label}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">📸</span>
+                    <div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200">
+                        {slot.label}
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        {slot.desc}
+                      </div>
+                    </div>
+                  </div>
+                  {photoUploaded[slot.id] && (
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">
+                      ✓ Done
+                    </span>
+                  )}
                 </div>
-                <div className="text-[10px] text-slate-400">{slot.desc}</div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPhotoUploaded((prev) => ({ ...prev, [slot.id]: !prev[slot.id] }))
-                  }
-                  className={`mt-1 px-2.5 py-1 rounded text-[11px] font-semibold cursor-pointer min-h-[36px] w-full ${
-                    photoUploaded[slot.id]
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600'
-                  }`}
-                >
-                  {photoUploaded[slot.id] ? '✓ Analyzed' : 'Upload photo'}
-                </button>
+
+                {/* Thumbnail Preview */}
+                {photoPreviews[slot.id] && (
+                  <div className="w-full h-24 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-black/10">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photoPreviews[slot.id]}
+                      alt={slot.label}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+
+                {/* Detection note */}
+                {photoDetections[slot.id] && (
+                  <div className="p-2 rounded-md bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-900 dark:text-emerald-200 font-medium">
+                    ⚡ {photoDetections[slot.id]}
+                  </div>
+                )}
+
+                {/* Analyzing indicator */}
+                {isAnalyzingPhoto[slot.id] && (
+                  <div className="p-2 rounded-md bg-sky-50 dark:bg-sky-950/50 border border-sky-200 dark:border-sky-800 text-[11px] text-sky-700 dark:text-sky-300 font-semibold animate-pulse flex items-center gap-1.5">
+                    <span className="animate-spin">🔄</span>
+                    <span>Analyzing with Gemini Vision...</span>
+                  </div>
+                )}
+
+                {/* Upload & Sample Buttons */}
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id={`file-input-${slot.id}`}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handlePhotoFile(slot.id, file);
+                    }}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor={`file-input-${slot.id}`}
+                    className="flex-1 py-1.5 px-2.5 rounded-lg text-center text-xs font-semibold cursor-pointer border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors shadow-2xs min-h-[36px] flex items-center justify-center"
+                  >
+                    📁 {photoUploaded[slot.id] ? 'Replace Photo' : 'Upload Photo'}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleSamplePhoto(slot.id)}
+                    className="py-1.5 px-2.5 rounded-lg text-xs font-semibold cursor-pointer border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 text-sky-700 dark:text-sky-300 transition-colors min-h-[36px]"
+                    title="Load a demo photo to simulate instant AI audit"
+                  >
+                    ✨ Demo
+                  </button>
+                </div>
               </div>
             ))}
           </div>

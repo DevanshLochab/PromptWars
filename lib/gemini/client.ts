@@ -14,7 +14,8 @@ export function getGeminiClient(): GoogleGenAI {
   }
 
   if (!cachedClient) {
-    cachedClient = new GoogleGenAI({ apiKey });
+    // Explicitly configure apiVersion: 'v1beta' because Google GenAI v1 rejects developer/systemInstruction
+    cachedClient = new GoogleGenAI({ apiKey, apiVersion: 'v1beta' });
   }
 
   return cachedClient;
