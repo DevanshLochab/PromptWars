@@ -1,0 +1,207 @@
+/**
+ * Saans English Message Catalogue
+ * 100+ strictly verified, precise strings covering all UI flows, safety alerts,
+ * physical receipts, community actions, and AI interactions.
+ */
+
+export const en: Record<string, string> = {
+  // Navigation & Shell
+  'nav.today': 'Today',
+  'nav.plan': 'Plan',
+  'nav.what_if': 'What-If',
+  'nav.community': 'Community',
+  'nav.ask': 'Ask Saans',
+  'header.title': 'Saans',
+  'header.subtitle': 'Air Quality Coach',
+  'header.settings': 'Settings & Preferences',
+  'header.live_aqi': 'Live AQI',
+
+  // AQI Bands
+  'aqi.good': 'Good',
+  'aqi.moderate': 'Moderate',
+  'aqi.poor': 'Poor',
+  'aqi.unhealthy': 'Unhealthy',
+  'aqi.severe': 'Severe',
+  'aqi.hazardous': 'Hazardous',
+  'aqi.who_target': 'WHO 24h Target (15 µg/m³)',
+  'aqi.current_outdoor': 'Current Outdoor AQI',
+  'aqi.estimated_indoor': 'Estimated Indoor Air',
+  'aqi.updated_at': 'Updated {time}',
+  'aqi.as_of': 'As of {time}',
+
+  // Evidence Grades
+  'evidence.grade_a': 'Grade A — Randomized or Empirical Chamber Study',
+  'evidence.grade_b': 'Grade B — Observational or Field Cohort Study',
+  'evidence.grade_c': 'Grade C — Engineering Calculation or Expert Consensus',
+  'evidence.grade_d': 'Grade D — Disproven Myth or Marketing Claim',
+  'evidence.grade_a_short': 'Grade A (Strong)',
+  'evidence.grade_b_short': 'Grade B (Moderate)',
+  'evidence.grade_c_short': 'Grade C (Consensus)',
+  'evidence.grade_d_short': 'Grade D (Myth/Debunked)',
+  'evidence.badge_title': 'Scientific Evidence Rating',
+
+  // Dual Ledger (Breathe & Give)
+  'ledger.title': 'Two-Ledger Impact Accounting',
+  'ledger.breathe_title': 'What You BREATHE',
+  'ledger.breathe_desc': 'Personal household exposure reduction compared to outdoor smog.',
+  'ledger.give_title': 'What You GIVE',
+  'ledger.give_desc': 'Emissions avoided through your transit choices and clean heating.',
+  'ledger.exposure_cut': '{pct}% Exposure Reduction',
+  'ledger.avoided_emissions': '{grams}g Air Toxins Avoided',
+  'ledger.actions_done': '{count} actions completed this week',
+  'ledger.mark_done': 'Mark as Done',
+  'ledger.completed': 'Completed Today',
+  'ledger.undo': 'Undo',
+
+  // Impact Receipt Card
+  'receipt.title': 'Impact Receipt',
+  'receipt.for_who': 'Targeted For:',
+  'receipt.cost': 'Estimated Cost',
+  'receipt.effort': 'Effort Required',
+  'receipt.effort_low': 'Low (1-2/5)',
+  'receipt.effort_med': 'Moderate (3/5)',
+  'receipt.effort_high': 'High (4-5/5)',
+  'receipt.confidence': 'Estimate Confidence',
+  'receipt.confidence_high': 'High Confidence',
+  'receipt.confidence_med': 'Medium Confidence',
+  'receipt.confidence_low': 'Preliminary Estimate',
+  'receipt.view_assumptions': 'View Physical Assumptions & Formula',
+  'receipt.hide_assumptions': 'Hide Assumptions',
+  'receipt.formula': 'Governing Formula',
+  'receipt.breathe_delta': 'Exposure Reduction',
+  'receipt.give_delta': 'Avoided Tailpipe/Combustion PM2.5',
+  'receipt.uncertainty_range': 'Uncertainty Interval: {low} to {high} {unit}',
+  'receipt.source_cite': 'Literature Source: {cite}',
+
+  // Ventilation & Windows
+  'windows.title': 'Natural Ventilation Windows',
+  'windows.open_now': 'Safe to Ventilate Now',
+  'windows.keep_closed': 'Keep Windows Sealed',
+  'windows.best_window': 'Best Ventilation Window: {start} to {end}',
+  'windows.outdoor_cleaner': 'Outdoor air is currently cleaner than indoor trapped smoke.',
+  'windows.outdoor_dirtier': 'Outdoor air is significantly more polluted than your home.',
+  'windows.duration': 'Ventilate for 15-20 minutes with cross-breeze.',
+
+  // Safety & Emergency Banners
+  'safety.co_warning_title': 'CRITICAL CARBON MONOXIDE (CO) LIFE-SAFETY ALERT',
+  'safety.co_warning_desc': 'Your home profile uses unvented combustion heating (gas/coal/wood). NEVER seal room gaps or weatherstrip windows while heaters are burning. Install an audible CO detector immediately.',
+  'safety.co_alarm_action': 'Ensure cross-ventilation or switch to electric heating layers.',
+  'safety.medical_disclaimer_title': 'Non-Medical Coaching Notice',
+  'safety.medical_disclaimer_desc': 'Saans is an environmental physics and exposure mitigation coach, not a certified medical device. If you experience severe wheezing, chest tightness, or respiratory distress, contact your doctor or call emergency services immediately.',
+  'safety.call_112': 'Call National Emergency 112',
+  'safety.no_infant_respirator': 'Infants and toddlers (under 2 years) should never wear tight N95 respirators due to airway suffocation risk. Use indoor purification instead.',
+  'safety.no_ozone_warning': 'Do not use ozone generators or ionizing air purifiers; ozone severely inflames lung tissue.',
+
+  // Actions Titles & Categories
+  'category.ventilation': 'Timing & Ventilation',
+  'category.purification': 'Air Purification',
+  'category.indoor_sources': 'Indoor Emission Sources',
+  'category.cooking_heating': 'Cooking & Warmth',
+  'category.personal_protection': 'Personal Protection',
+  'category.commute': 'Clean Commuting',
+  'category.waste': 'Neighborhood Waste & Smoke',
+  'category.community': 'Community Collaboration',
+
+  // Community Hub (M7)
+  'community.hub_title': 'Neighborhood Airshed Hub',
+  'community.hub_desc': 'Collective action, local RWA initiatives, and cooperative emission reduction.',
+  'community.join_title': 'Join or Switch Society Hub',
+  'community.enter_code': 'Enter Society / Colony Code',
+  'community.join_button': 'Join Hub',
+  'community.joined_success': 'Successfully connected to {code} Airshed!',
+  'community.pooled_impact': 'Airshed Collective Impact (Past 7 Days)',
+  'community.households_active': '{count} Households Participating',
+  'community.weekly_pm25_avoided': '{grams}g PM2.5 Prevented Locally',
+  'community.weekly_avg_reduction': '{pct}% Avg Member Exposure Drop',
+  'community.top_neighborhood_actions': 'Top Community Actions This Week',
+  'community.active_initiatives': 'Cooperative Campaigns in Progress',
+
+  // Action Kits
+  'actionkit.title': 'Community Action Kits',
+  'actionkit.desc': 'Ready-to-use diplomatic notices, WhatsApp broadcasts, and practical solutions for common residential pollution hotspots.',
+  'actionkit.select_issue': 'Select an Airshed Issue:',
+  'actionkit.copy_rwa_notice': 'Copy Building/RWA Notice',
+  'actionkit.copy_school_notice': 'Copy School Circular',
+  'actionkit.copy_whatsapp': 'Copy WhatsApp Broadcast',
+  'actionkit.copied': 'Copied to clipboard!',
+  'actionkit.what_changes': 'Local Impact Measurable:',
+  'actionkit.alternatives': 'Practical & Dignified Alternatives:',
+
+  // Hotspot Reporting
+  'hotspot.title': 'Report Neighborhood Smoke Hotspot',
+  'hotspot.desc': 'Document open waste burning, construction plumes, or persistent engine idling. Zero personal identifiers are shared.',
+  'hotspot.photo_upload': 'Upload Evidence Photo',
+  'hotspot.photo_choose': 'Choose Photo or Take Picture',
+  'hotspot.source_type': 'Observed Source Type',
+  'hotspot.severity': 'Intensity Level',
+  'hotspot.location': 'Location / Nearest Landmark',
+  'hotspot.location_placeholder': 'e.g. Empty plot behind Block C market...',
+  'hotspot.notes': 'Additional Observations',
+  'hotspot.privacy_warning': 'Mandatory Privacy Rule: Do not capture human faces, private residence interiors, or vehicle license plates.',
+  'hotspot.review_step': 'Mandatory Verification Step',
+  'hotspot.review_confirm': 'I confirm this report contains no private individuals, faces, or registration numbers.',
+  'hotspot.submit_report': 'Submit Hotspot Report',
+  'hotspot.submitting': 'Submitting...',
+  'hotspot.success': 'Report submitted and logged for local municipal reporting (Sameer/311)!',
+  'hotspot.channels_info': 'Official Reporting Channels: Green Delhi App, MCD 311, CPCB Sameer App.',
+
+  // Neighbour Check
+  'neighbour.title': 'Check on a Vulnerable Neighbour',
+  'neighbour.desc': 'Keep a private on-device list of elderly neighbours, families with infants, or people with asthma to contact during severe smog spikes.',
+  'neighbour.add_new': 'Add Neighbour to Care List',
+  'neighbour.name': 'Neighbour Name / Flat',
+  'neighbour.contact': 'Phone / WhatsApp Number',
+  'neighbour.note': 'Health Note (e.g. 78yo living alone, uses inhaler)',
+  'neighbour.save': 'Save to Private List',
+  'neighbour.whatsapp_btn': 'WhatsApp Check-in',
+  'neighbour.call_btn': 'Call',
+  'neighbour.remove': 'Remove',
+  'neighbour.empty': 'No neighbours added yet. Add someone you care about in your colony.',
+  'neighbour.quick_msg': 'Namaste! Outdoor AQI is over 350 today. Just checking in to see if you have your medicine and if you need any help with air purifiers or groceries.',
+
+  // Ask AI & Myths (M6)
+  'ask.title': 'Ask Saans AI Air Quality Coach',
+  'ask.subtitle': 'Science-grounded answers on aerosol physics, purifiers, masks, and myth busting.',
+  'ask.placeholder': 'Ask any question (e.g., Do indoor plants clean smog? Is a cloth mask enough?)...',
+  'ask.button': 'Ask Coach',
+  'ask.suggested': 'Frequently Asked Questions & Myth Checks:',
+  'ask.evidence_grounding': 'Grounded in WHO 2021 guidelines, EPA AirNow, and peer-reviewed aerosol physics. Zero marketing bias.',
+  'ask.thinking': 'Analyzing aerosol physics & evidence...',
+  'ask.myth_badge': 'Myth Debunked',
+  'ask.myth_what_evidence_says': 'What the Scientific Evidence Says:',
+  'ask.myth_what_to_do': 'What to Do Instead (Proven Effective):',
+  'ask.citations': 'Scientific Sources & Guidelines:',
+
+  // WhatsApp Summary
+  'whatsapp.button_label': 'Share Plan on WhatsApp',
+  'whatsapp.copied': 'Plan summary copied to clipboard! Paste it into WhatsApp.',
+  'whatsapp.title': 'Saans Daily Air Plan',
+
+  // Settings & Dark Mode
+  'settings.title': 'Settings & Preferences',
+  'settings.language': 'Language / भाषा',
+  'settings.theme': 'Appearance / Theme',
+  'settings.theme_system': 'System Default',
+  'settings.theme_light': 'Light Mode',
+  'settings.theme_dark': 'Dark Mode',
+  'settings.demo_mode': 'Demo Mode (Severe Delhi Smog Jan 15)',
+  'settings.demo_mode_desc': 'Loads pre-configured 4-member profile and severe smog timeline for testing.',
+  'settings.reset_data': 'Reset All Stored Data',
+  'settings.reset_confirm': 'Are you sure you want to delete all saved profile and ledger data?',
+  'settings.privacy_title': 'Privacy First Architecture',
+  'settings.privacy_desc': 'All personal parameters, neighbour lists, and action history remain strictly in your browser local storage. Nothing is sold or tracked.',
+
+  // Offline Banner
+  'offline.badge': 'Offline Mode',
+  'offline.notice': 'Viewing cached plan as of {time}. Reconnect to fetch live air data.',
+
+  // General Buttons & Common
+  'common.close': 'Close',
+  'common.cancel': 'Cancel',
+  'common.confirm': 'Confirm',
+  'common.save': 'Save',
+  'common.delete': 'Delete',
+  'common.loading': 'Loading...',
+  'common.error': 'An unexpected error occurred. Please try again.',
+  'common.estimate_disclaimer': '*All numbers are physics-based estimates with uncertainty intervals, not clinical readings.',
+};

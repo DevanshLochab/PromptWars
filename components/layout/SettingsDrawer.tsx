@@ -1,7 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProfile } from '@/lib/store/ProfileProvider';
+import { useTranslation } from '@/lib/i18n';
+import { getStoredTheme, applyTheme, Theme } from '@/lib/store/themeStore';
 
 interface SettingsDrawerProps {
   isOpen: boolean;
@@ -10,6 +12,17 @@ interface SettingsDrawerProps {
 
 export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
   const { isDemoMode, language, updateLanguage, toggleDemoMode, resetAllData } = useProfile();
+  const { t } = useTranslation();
+  const [theme, setThemeState] = useState<Theme>('system');
+
+  useEffect(() => {
+    setThemeState(getStoredTheme());
+  }, [isOpen]);
+
+  const handleThemeChange = (newTheme: Theme) => {
+    setThemeState(newTheme);
+    applyTheme(newTheme);
+  };
 
   if (!isOpen) return null;
 
@@ -22,8 +35,8 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
       <div className="relative z-10 w-full max-w-sm bg-white dark:bg-slate-900 shadow-2xl p-6 flex flex-col justify-between h-full border-l border-slate-200 dark:border-slate-800 overflow-y-auto">
         <div className="space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
-            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-55">
-              Settings & Preferences
+            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+              {t('settings.title')}
             </h2>
             <button
               onClick={onClose}
@@ -37,7 +50,7 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
           {/* Language Toggle */}
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-              Language / भाषा
+              {t('settings.language')}
             </label>
             <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
               <button
@@ -46,7 +59,7 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
                 className={`py-2 px-3 text-sm font-medium rounded-md transition-all ${
                   language === 'en'
                     ? 'bg-white dark:bg-slate-700 text-sky-700 dark:text-sky-300 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
               >
                 English
@@ -57,10 +70,55 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
                 className={`py-2 px-3 text-sm font-medium rounded-md transition-all ${
                   language === 'hi'
                     ? 'bg-white dark:bg-slate-700 text-sky-700 dark:text-sky-300 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
               >
                 हिन्दी (Hindi)
+              </button>
+            </div>
+          </div>
+
+          {/* Dark Mode / Theme Selector */}
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              {t('settings.theme')}
+            </label>
+            <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => handleThemeChange('system')}
+                className={`py-2 px-2 rounded-md transition-all flex flex-col items-center gap-1 ${
+                  theme === 'system'
+                    ? 'bg-white dark:bg-slate-700 text-sky-700 dark:text-sky-300 shadow-xs font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                <span>⚙️</span>
+                <span>{t('settings.theme_system')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleThemeChange('light')}
+                className={`py-2 px-2 rounded-md transition-all flex flex-col items-center gap-1 ${
+                  theme === 'light'
+                    ? 'bg-white dark:bg-slate-700 text-sky-700 dark:text-sky-300 shadow-xs font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                <span>☀️</span>
+                <span>{t('settings.theme_light')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleThemeChange('dark')}
+                className={`py-2 px-2 rounded-md transition-all flex flex-col items-center gap-1 ${
+                  theme === 'dark'
+                    ? 'bg-white dark:bg-slate-700 text-sky-700 dark:text-sky-300 shadow-xs font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                <span>🌙</span>
+                <span>{t('settings.theme_dark')}</span>
               </button>
             </div>
           </div>
@@ -70,10 +128,10 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
             <div className="flex items-center justify-between">
               <div>
                 <span className="font-semibold text-sm text-sky-900 dark:text-sky-200">
-                  Demo Mode (Delhi Smog Jan 15)
+                  {t('settings.demo_mode')}
                 </span>
                 <p className="text-xs text-sky-700 dark:text-sky-400">
-                  Loads prototype Delhi 4-member profile and severe smog hourly timeline
+                  {t('settings.demo_mode_desc')}
                 </p>
               </div>
               <input
@@ -92,14 +150,14 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
             </h3>
             <button
               onClick={() => {
-                if (window.confirm('Clear all stored local data and restore defaults?')) {
+                if (window.confirm(t('settings.reset_confirm'))) {
                   resetAllData();
                   onClose();
                 }
               }}
               className="w-full py-2.5 px-4 text-sm font-medium text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-lg hover:bg-rose-100 transition-colors"
             >
-              Reset All Saved Household Data
+              {t('settings.reset_data')}
             </button>
           </div>
         </div>
@@ -107,11 +165,10 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
         {/* Privacy Note */}
         <div className="pt-6 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 space-y-1">
           <p className="font-semibold text-slate-600 dark:text-slate-300">
-            🔒 Privacy First Architecture
+            🔒 {t('settings.privacy_title')}
           </p>
           <p>
-            Saans stores all household health parameters exclusively on your local device. No
-            identifiable health records are transmitted to third-party ad networks.
+            {t('settings.privacy_desc')}
           </p>
         </div>
       </div>

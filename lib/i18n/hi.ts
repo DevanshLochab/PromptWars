@@ -1,0 +1,207 @@
+/**
+ * Saans Hindi Message Catalogue
+ * प्राकृतिक और शुद्ध हिन्दी शब्दावली (Natural, authentic conversational & technical Hindi)
+ * 100+ keys corresponding directly to en.ts.
+ */
+
+export const hi: Record<string, string> = {
+  // Navigation & Shell
+  'nav.today': 'आज का हाल',
+  'nav.plan': 'सुरक्षा योजना',
+  'nav.what_if': 'क्या होगा अगर?',
+  'nav.community': 'सामुदायिक पहल',
+  'nav.ask': 'सांस से पूछें',
+  'header.title': 'सांस',
+  'header.subtitle': 'वायु गुणवत्ता एवं स्वास्थ्य मार्गदर्शक',
+  'header.settings': 'सेटिंग्स और प्राथमिकताएं',
+  'header.live_aqi': 'वर्तमान एक्यूआई',
+
+  // AQI Bands
+  'aqi.good': 'अच्छा (Good)',
+  'aqi.moderate': 'मध्यम (Moderate)',
+  'aqi.poor': 'खराब (Poor)',
+  'aqi.unhealthy': 'अस्वस्थ (Unhealthy)',
+  'aqi.severe': 'गंभीर (Severe)',
+  'aqi.hazardous': 'अति-गंभीर (Hazardous)',
+  'aqi.who_target': 'डब्ल्यूएचओ 24 घंटे का मानक (15 µg/m³)',
+  'aqi.current_outdoor': 'बाहर की वर्तमान वायु गुणवत्ता',
+  'aqi.estimated_indoor': 'घर के अंदर अनुमानित हवा',
+  'aqi.updated_at': 'अपडेट समय: {time}',
+  'aqi.as_of': 'स्थिति: {time}',
+
+  // Evidence Grades
+  'evidence.grade_a': 'ग्रेड A — लैब परीक्षण या पुख्ता वैज्ञानिक अध्ययन',
+  'evidence.grade_b': 'ग्रेड B — क्षेत्रीय फील्ड अध्ययन व अवलोकन',
+  'evidence.grade_c': 'ग्रेड C — इंजीनियरिंग गणना या वैज्ञानिक सहमति',
+  'evidence.grade_d': 'ग्रेड D — भ्रामक दावा या अप्रमाणित नुस्खा (Myth)',
+  'evidence.grade_a_short': 'ग्रेड A (प्रमाणित)',
+  'evidence.grade_b_short': 'ग्रेड B (मध्यम प्रमाण)',
+  'evidence.grade_c_short': 'ग्रेड C (वैज्ञानिक अनुमान)',
+  'evidence.grade_d_short': 'ग्रेड D (भ्रामक दावा)',
+  'evidence.badge_title': 'वैज्ञानिक प्रमाण रेटिंग',
+
+  // Dual Ledger (Breathe & Give)
+  'ledger.title': 'दोहरा प्रभाव खाता (Two-Ledger Impact)',
+  'ledger.breathe_title': 'आप क्या सांस लेते हैं (Breathe)',
+  'ledger.breathe_desc': 'बाहरी जहरीली धुंध की तुलना में आपके घर के अंदर प्रदूषण में आई कमी।',
+  'ledger.give_title': 'आप समाज को क्या देते हैं (Give)',
+  'ledger.give_desc': 'सार्वजनिक परिवहन और स्वच्छ आदतों से हवा में रोकी गई जहरीली गैसें।',
+  'ledger.exposure_cut': '{pct}% प्रदूषण से बचाव',
+  'ledger.avoided_emissions': '{grams} ग्राम जहरीले कण रोके गए',
+  'ledger.actions_done': 'इस सप्ताह {count} सुरक्षा कदम पूरे किए गए',
+  'ledger.mark_done': 'कदम पूरा हुआ (Mark Done)',
+  'ledger.completed': 'आज पूरा कर लिया गया',
+  'ledger.undo': 'पूर्ववत करें',
+
+  // Impact Receipt Card
+  'receipt.title': 'असर की रसीद (Impact Receipt)',
+  'receipt.for_who': 'किसके लिए जरूरी:',
+  'receipt.cost': 'अनुमानित खर्च',
+  'receipt.effort': 'प्रयास स्तर',
+  'receipt.effort_low': 'सरल (1-2/5)',
+  'receipt.effort_med': 'मध्यम (3/5)',
+  'receipt.effort_high': 'कठिन (4-5/5)',
+  'receipt.confidence': 'अनुमान की विश्वसनीयता',
+  'receipt.confidence_high': 'उच्च विश्वसनीयता',
+  'receipt.confidence_med': 'मध्यम विश्वसनीयता',
+  'receipt.confidence_low': 'प्रारंभिक अनुमान',
+  'receipt.view_assumptions': 'भौतिक सूत्र और वैज्ञानिक आधार देखें',
+  'receipt.hide_assumptions': 'वैज्ञानिक आधार छिपाएं',
+  'receipt.formula': 'लागू भौतिक नियम',
+  'receipt.breathe_delta': 'प्रदूषण में कमी',
+  'receipt.give_delta': 'रोका गया वाहन/धुआं PM2.5',
+  'receipt.uncertainty_range': 'अनुमानित दायरा: {low} से {high} {unit}',
+  'receipt.source_cite': 'शोध संदर्भ: {cite}',
+
+  // Ventilation & Windows
+  'windows.title': 'खिड़कियां खोलने का सही समय',
+  'windows.open_now': 'अभी खिड़कियां खोलना सुरक्षित है',
+  'windows.keep_closed': 'खिड़कियां और दरवाजे बंद रखें',
+  'windows.best_window': 'हवा ताज़ा करने का सबसे अच्छा समय: {start} से {end}',
+  'windows.outdoor_cleaner': 'इस समय बाहर की हवा घर के अंदर की तुलना में अधिक साफ है।',
+  'windows.outdoor_dirtier': 'बाहर प्रदूषण बहुत अधिक है, खिड़कियां बंद रखें।',
+  'windows.duration': 'ताज़ा हवा के लिए 15-20 मिनट आर-पार वेंटिलेशन करें।',
+
+  // Safety & Emergency Banners
+  'safety.co_warning_title': 'अति-महत्वपूर्ण चेतावनी: कार्बन मोनोऑक्साइड (CO) का जानलेवा खतरा',
+  'safety.co_warning_desc': 'आपके घर में गैस, कोयला या लकड़ी का हीटर इस्तेमाल हो रहा है। हीटर जलते समय कमरा या खिड़कियां पूरी तरह कभी सील न करें! तुरंत CO अलार्म लगाएं।',
+  'safety.co_alarm_action': 'हल्का वेंटिलेशन खुला रखें या बिजली वाले हीटर और गर्म कपड़ों का उपयोग करें।',
+  'safety.medical_disclaimer_title': 'गैर-चिकित्सीय स्वास्थ्य परामर्श सूचना',
+  'safety.medical_disclaimer_desc': 'सांस ऐप एक वायु भौतिकी और प्रदूषण से बचाव का सहायक है, कोई डॉक्टर या मेडिकल उपकरण नहीं। यदि सांस फूलने, छाती में दर्द या घबराहट की समस्या हो, तो तुरंत डॉक्टर से संपर्क करें।',
+  'safety.call_112': 'राष्ट्रीय आपातकालीन 112 पर कॉल करें',
+  'safety.no_infant_respirator': '2 साल से छोटे शिशुओं को कभी भी टाइट N95 मास्क न पहनाएं, इससे सांस घुटने का खतरा रहता है। इसके बदले कमरे में प्यूरीफायर चलाएं।',
+  'safety.no_ozone_warning': 'ओजोन पैदा करने वाले प्यूरीफायर या आयोनाइज़र का प्रयोग न करें; ओजोन फेफड़ों को भारी नुकसान पहुंचाती है।',
+
+  // Actions Titles & Categories
+  'category.ventilation': 'हवा का बहाव एवं समय',
+  'category.purification': 'एयर प्यूरिफायर एवं फिल्टर',
+  'category.indoor_sources': 'घर के अंदर के प्रदूषण स्रोत',
+  'category.cooking_heating': 'रसोई एवं कमरे की गर्माहट',
+  'category.personal_protection': 'मास्क एवं व्यक्तिगत सुरक्षा',
+  'category.commute': 'सुरक्षित आवागमन एवं यात्रा',
+  'category.waste': 'कचरा, पत्तियां व धुआं रोकथाम',
+  'category.community': 'सामुदायिक सहयोग',
+
+  // Community Hub (M7)
+  'community.hub_title': 'आस-पड़ोस का स्वच्छ वायु केंद्र',
+  'community.hub_desc': 'आरडब्ल्यूए (RWA), स्थानीय सोसायटी और पड़ोसियों के साथ मिलकर सामूहिक प्रदूषण नियंत्रण।',
+  'community.join_title': 'सोसायटी हब से जुड़ें या बदलें',
+  'community.enter_code': 'सोसायटी या कॉलोनी कोड दर्ज करें',
+  'community.join_button': 'हब से जुड़ें',
+  'community.joined_success': 'आप सफलतापूर्वक {code} हब से जुड़ गए हैं!',
+  'community.pooled_impact': 'कॉलोनी का सामूहिक असर (पिछले 7 दिन)',
+  'community.households_active': '{count} परिवार सक्रिय रूप से जुड़े हैं',
+  'community.weekly_pm25_avoided': '{grams} ग्राम विषैले कण हवा में जाने से रोके गए',
+  'community.weekly_avg_reduction': '{pct}% औसत घरेलू प्रदूषण में गिरावट',
+  'community.top_neighborhood_actions': 'इस हफ्ते कॉलोनी में सबसे ज्यादा अपनाए गए कदम',
+  'community.active_initiatives': 'चल रहे सामुदायिक अभियान',
+
+  // Action Kits
+  'actionkit.title': 'सामुदायिक एक्शन किट',
+  'actionkit.desc': 'सोसायटी नोटिस बोर्ड, स्कूल सूचना और व्हाट्सएप ग्रुप के लिए सम्मानजनक एवं प्रभावशाली नोटिस और व्यावहारिक समाधान।',
+  'actionkit.select_issue': 'प्रदूषण का मुद्दा चुनें:',
+  'actionkit.copy_rwa_notice': 'सोसायटी/RWA नोटिस कॉपी करें',
+  'actionkit.copy_school_notice': 'स्कूल सर्कुलर कॉपी करें',
+  'actionkit.copy_whatsapp': 'व्हाट्सएप संदेश कॉपी करें',
+  'actionkit.copied': 'क्लिपबोर्ड पर कॉपी हो गया!',
+  'actionkit.what_changes': 'जमीनी असर के आंकड़े:',
+  'actionkit.alternatives': 'सम्मानजनक एवं व्यावहारिक विकल्प:',
+
+  // Hotspot Reporting
+  'hotspot.title': 'स्थानीय धुएं या प्रदूषण हॉटस्पॉट की रिपोर्ट करें',
+  'hotspot.desc': 'कूड़ा जलाने, धूल उड़ाने या लंबे समय तक गाड़ी चालू रखने की रिपोर्ट दर्ज करें। कोई निजी पहचान साझा नहीं होती।',
+  'hotspot.photo_upload': 'प्रमाण हेतु फोटो अपलोड करें',
+  'hotspot.photo_choose': 'फोटो चुनें या कैमरा खोलें',
+  'hotspot.source_type': 'प्रदूषण का प्रकार',
+  'hotspot.severity': 'धुएं की तीव्रता',
+  'hotspot.location': 'स्थान / नजदीकी लैंडमार्क',
+  'hotspot.location_placeholder': 'उदा. ब्लॉक सी मार्केट के पीछे खाली प्लॉट...',
+  'hotspot.notes': 'अन्य जरूरी विवरण',
+  'hotspot.privacy_warning': 'अनिवार्य गोपनीयता नियम: फोटो में किसी व्यक्ति का चेहरा, निजी घर का अंदरूनी हिस्सा या गाड़ी की नंबर प्लेट नहीं होनी चाहिए।',
+  'hotspot.review_step': 'समीक्षा एवं पुष्टि',
+  'hotspot.review_confirm': 'मैं पुष्टि करता/करती हूँ कि इस रिपोर्ट में किसी व्यक्ति का चेहरा या नंबर प्लेट शामिल नहीं है।',
+  'hotspot.submit_report': 'हॉटस्पॉट रिपोर्ट दर्ज करें',
+  'hotspot.submitting': 'दर्ज की जा रही है...',
+  'hotspot.success': 'रिपोर्ट दर्ज हो गई! आप इसे समीर या 311 ऐप पर भी भेज सकते हैं।',
+  'hotspot.channels_info': 'आधिकारिक शिकायत मंच: ग्रीन दिल्ली ऐप, एमसीडी 311, सीपीसीबी समीर ऐप।',
+
+  // Neighbour Check
+  'neighbour.title': 'बुजुर्ग व संवेदनशील पड़ोसियों का हाल-चाल',
+  'neighbour.desc': 'गंभीर धुंध के दिनों में अकेले रहने वाले बुजुर्गों, नवजात शिशुओं और दमा रोगियों की सुध लेने के लिए निजी सूची।',
+  'neighbour.add_new': 'नया पड़ोसी जोड़ें',
+  'neighbour.name': 'पड़ोसी का नाम / फ्लैट नं.',
+  'neighbour.contact': 'फोन या व्हाट्सएप नंबर',
+  'neighbour.note': 'स्वास्थ्य टिप्पणी (उदा. अकेले रहते हैं, इनहेलर प्रयोग करते हैं)',
+  'neighbour.save': 'निजी सूची में सहेजें',
+  'neighbour.whatsapp_btn': 'व्हाट्सएप संदेश भेजें',
+  'neighbour.call_btn': 'कॉल करें',
+  'neighbour.remove': 'हटाएं',
+  'neighbour.empty': 'अभी कोई पड़ोसी नहीं जोड़ा गया है। अपनी सोसायटी के किसी जरूरतमंद का नाम जोड़ें।',
+  'neighbour.quick_msg': 'नमस्ते! आज बाहर एक्यूआई 350 के पार है। आशा है आप सुरक्षित हैं। क्या आपको किसी दवा, एयर प्यूरिफायर या राशन में सहायता की आवश्यकता है?',
+
+  // Ask AI & Myths (M6)
+  'ask.title': 'सांस एआई - वायु विशेषज्ञ से पूछें',
+  'ask.subtitle': 'हवा की भौतिकी, प्यूरिफायर, मास्क और भ्रामक दावों की निष्पक्ष व वैज्ञानिक पड़ताल।',
+  'ask.placeholder': 'कोई भी सवाल पूछें (उदा. क्या इनडोर पौधे प्रदूषण साफ करते हैं? क्या कपड़े का मास्क काफी है?)...',
+  'ask.button': 'पूछें',
+  'ask.suggested': 'अक्सर पूछे जाने वाले सवाल और मिथक जांच:',
+  'ask.evidence_grounding': 'विश्व स्वास्थ्य संगठन (WHO 2021) और एरोसोल भौतिकी के वैज्ञानिक नियमों पर आधारित। कोई भ्रामक प्रचार नहीं।',
+  'ask.thinking': 'वैज्ञानिक शोध व आंकड़ों की जांच की जा रही है...',
+  'ask.myth_badge': 'मिथक खारिज (दावा गलत)',
+  'ask.myth_what_evidence_says': 'वैज्ञानिक शोध क्या कहता है:',
+  'ask.myth_what_to_do': 'इसके बदले क्या असरदार कदम उठाएं:',
+  'ask.citations': 'वैज्ञानिक संदर्भ एवं मानक:',
+
+  // WhatsApp Summary
+  'whatsapp.button_label': 'व्हाट्सएप पर प्लान शेयर करें',
+  'whatsapp.copied': 'प्लान कॉपी हो गया! अब आप इसे व्हाट्सएप पर पेस्ट कर सकते हैं।',
+  'whatsapp.title': 'सांस दैनिक वायु सुरक्षा प्लान',
+
+  // Settings & Dark Mode
+  'settings.title': 'सेटिंग्स और प्राथमिकताएं',
+  'settings.language': 'भाषा / Language',
+  'settings.theme': 'दिखावट (Theme)',
+  'settings.theme_system': 'सिस्टम डिफ़ॉल्ट',
+  'settings.theme_light': 'लाइट मोड',
+  'settings.theme_dark': 'डार्क मोड',
+  'settings.demo_mode': 'डेमो मोड (दिल्ली गंभीर धुंध 15 जनवरी)',
+  'settings.demo_mode_desc': 'परीक्षण हेतु 4 सदस्यों का परिवार और 24 घंटे का गंभीर स्मॉग डेटा लोड करता है।',
+  'settings.reset_data': 'सारा सहेजा गया डेटा रीसेट करें',
+  'settings.reset_confirm': 'क्या आप वाकई सारा लोकल डेटा और प्रोफाइल मिटाना चाहते हैं?',
+  'settings.privacy_title': 'गोपनीयता सर्वोपरि आर्किटेक्चर',
+  'settings.privacy_desc': 'आपकी सेहत, पड़ोसियों की सूची और क्रियाकलाप केवल आपके फोन/ब्राउज़र में रहते हैं। कोई डेटा बाहर नहीं बेचा जाता।',
+
+  // Offline Banner
+  'offline.badge': 'ऑफ़लाइन मोड',
+  'offline.notice': 'सहेजा गया प्लान प्रदर्शित ({time})। ताज़ा डेटा हेतु इंटरनेट से जुड़ें।',
+
+  // General Buttons & Common
+  'common.close': 'बंद करें',
+  'common.cancel': 'रद्द करें',
+  'common.confirm': 'पुष्टि करें',
+  'common.save': 'सहेजें',
+  'common.delete': 'हटाएं',
+  'common.loading': 'लोड हो रहा है...',
+  'common.error': 'कोई अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।',
+  'common.estimate_disclaimer': '*सभी संख्याएं वैज्ञानिक भौतिकी अनुमान हैं, कोई चिकित्सीय रीडिंग नहीं।',
+};

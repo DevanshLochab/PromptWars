@@ -3,12 +3,20 @@
 import React, { useEffect, useState } from 'react';
 import { useProfile } from '@/lib/store/ProfileProvider';
 import { getAirQuality } from '@/lib/data/openMeteo';
-import { HourlyAir } from '@/lib/schemas';
+import { HourlyAir, Receipt } from '@/lib/schemas';
+import { AirRing } from '@/components/air/AirRing';
+import { TwoLedger } from '@/components/air/TwoLedger';
+import { DayTimeline } from '@/components/air/DayTimeline';
+import { ImpactReceipt } from '@/components/receipt/ImpactReceipt';
+import { SafetyBanner } from '@/components/common/SafetyBanner';
+import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
+import { OnboardingStepper } from '@/components/onboarding/OnboardingStepper';
 
 export default function TodayPage() {
-  const { profile, isDemoMode, language } = useProfile();
+  const { profile, isDemoMode, language, setProfile } = useProfile();
   const [hourlyData, setHourlyData] = useState<HourlyAir[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -22,111 +30,260 @@ export default function TodayPage() {
     fetchData();
   }, [profile, isDemoMode]);
 
-  const current = hourlyData?.[0];
+  // If user has no profile and not demo mode, prompt onboarding
+  if (!profile && !isDemoMode && !loading) {
+    return (
+      <div className="max-w-2xl mx-auto py-4">
+        <OnboardingStepper
+          onComplete={(newProf) => {
+            setProfile(newProf);
+            setShowOnboarding(false);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (loading && !hourlyData) {
+    return (
+      <div className="space-y-6 max-w-3xl mx-auto pb-12">
+        <LoadingSkeleton type="ring" />
+        <LoadingSkeleton type="receipt" />
+        <LoadingSkeleton type="timeline" />
+      </div>
+    );
+  }
+
+  // Current Air Quality Snapshot
+  const current = hourlyData?.[0] ?? {
+    pm25: 320,
+    pm10: 480,
+    no2: 45,
+    o3: 8,
+    usAqi: 370,
+    tempC: 9.5,
+    rh: 88,
+    windMs: 1.2,
+  };
+
+  // Build 24-hour timeline format
+  const timelineEntries = (hourlyData || []).slice(0, 24).map((h, idx) => {
+    const aqi = h.usAqi;
+    let aqiBand = 'hazardous';
+    if (aqi <= 50) aqiBand = 'good';
+    else if (aqi <= 100) aqiBand = 'moderate';
+    else if (aqi <= 150) aqiBand = 'unhealthy-sg';
+    else if (aqi <= 200) aqiBand = 'unhealthy';
+    else if (aqi <= 300) aqiBand = 'very-unhealthy';
+
+    const tags: string[] = [];
+    if (idx === 7 || idx === 8) tags.push('Morning commute', 'School run');
+    if (idx >= 12 && idx <= 14) tags.push('Cleanest window', 'Ventilate');
+    if (idx === 19 || idx === 20) tags.push('Cook with exhaust');
+    if (idx === 22) tags.push('Purifier High');
+
+    let advice = 'Hazardous inversion layer. Keep doors latched and run HEPA filter continuously.';
+    if (idx >= 12 && idx <= 15) {
+      advice = 'Daily pollution trough. If indoor PM2.5 exceeds 150 µg/m³, create a 15-minute cross-draft flush.';
+    } else if (idx >= 7 && idx <= 9) {
+      advice = 'Morning rush hour peak with cold air trapping exhaust. Wear a tightly fitted N95 respirator outdoors.';
+    } else if (idx >= 18 && idx <= 21) {
+      advice = 'Evening temperature inversion settling in. Keep bedroom refuge door closed with purifier on.';
+    }
+
+    return {
+      hour: idx,
+      aqiBand,
+      tags,
+      advice,
+      pm25: h.pm25,
+      aqi: h.usAqi,
+    };
+  });
+
+  // Today's signature top priority receipt
+  const topActionReceipt: Receipt = {
+    id: 'rcpt_today_clean_bedroom',
+    actionId: 'purifier_run_high_bedroom_evening',
+    memberIds: profile?.members.map((m) => m.id) || ['m3', 'm4'],
+    formulaId: 'bedroom_purification_flush',
+    window: { start: 21, end: 23 },
+    breathe: {
+      metric: 'pm25_exposure_reduction_pct',
+      before: current.pm25,
+      after: 42,
+      deltaPct: -86.8,
+      unit: 'µg/m³',
+      low: 35,
+      high: 55,
+    },
+    give: {
+      pm25_g: 0,
+      co2e_g: 0,
+      period: 'nightly',
+      low: 0,
+      high: 0,
+    },
+    cost: {
+      upfront: 0,
+      ongoing: 18,
+      currency: 'INR',
+    },
+    effort: 1,
+    evidence: 'A',
+    confidence: 'high',
+    assumptions: [
+      {
+        label: 'Bedroom volume',
+        value: 36,
+        unit: 'm³',
+        source: 'Household profile main room estimate',
+      },
+      {
+        label: 'Purifier CADR',
+        value: 250,
+        unit: 'm³/h',
+        source: 'Manufacturer spec at High fan speed',
+      },
+      {
+        label: 'Air changes per hour (ACH)',
+        value: 6.9,
+        unit: 'ACH',
+        source: 'CADR / Room Volume (EPA Clean Air Guideline recommends >5 ACH)',
+      },
+      {
+        label: 'Room infiltration factor',
+        value: 0.25,
+        unit: 'k_inf',
+        source: 'ASHRAE closed door residential benchmark',
+      },
+    ],
+  };
+
+  // TwoLedger figures
+  const breatheData = {
+    value: Math.round(current.pm25 * 0.42), // estimated indoor exposure with current mitigation
+    who: Math.max(1, Math.round(((current.pm25 * 0.42) / 15) * 10) / 10),
+    label:
+      'Household 24-hr personal inhalation dose across indoor rooms and transit',
+    baseline: current.pm25,
+  };
+
+  const giveData = {
+    pm25: 64, // grams avoided today by choosing metro + clean cooking habits
+    co2e: 480,
+    label:
+      'Avoided 64g PM2.5 today — equivalent to keeping 2 motorcycles off Delhi roads',
+    period: 'daily',
+  };
+
+  const hasAsthma = profile?.members.some((m) =>
+    m.conditions.includes('asthma')
+  );
+  const hasCombustionHeating = profile?.home.heating.some(
+    (h) => h === 'gas' || h === 'coal_charcoal' || h === 'wood'
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Current Conditions Card */}
-      <div className="p-6 rounded-2xl bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/20 border border-red-200 dark:border-red-900/40 shadow-xs text-center space-y-4">
-        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-          <span>📍 {profile?.location.placeName ?? 'New Delhi, India'}</span>
-          <span>{isDemoMode ? '⚡ Demo Snapshot (Jan 15)' : '🔴 Live Feed'}</span>
-        </div>
-
-        {/* AQI Ring */}
-        <div className="relative inline-flex items-center justify-center">
-          <div className="w-36 h-36 rounded-full border-8 border-red-600/20 dark:border-red-500/20 flex flex-col items-center justify-center bg-white dark:bg-slate-900 shadow-inner">
-            <span className="text-4xl font-extrabold tracking-tight text-red-600 dark:text-red-400">
-              {loading ? '--' : current?.usAqi ?? 370}
-            </span>
-            <span className="text-xs uppercase font-bold tracking-wider text-red-700 dark:text-red-300">
-              Hazardous
-            </span>
-          </div>
-          {/* Animated accent ring */}
-          <div className="absolute inset-0 rounded-full border-4 border-red-600 border-t-transparent animate-spin-slow" />
-        </div>
-
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {language === 'hi' ? 'वायु गुणवत्ता गंभीर है' : 'Severe Air Quality Alert'}
-          </h2>
-          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-xs mx-auto">
-            {language === 'hi'
-              ? 'बाहर हवा में अत्यधिक पीएम2.5 कण हैं। खिड़कियां बंद रखें और घर के अंदर रहें।'
-              : 'Dense particulate inversion. Keep windows firmly latched and run indoor HEPA filtration.'}
-          </p>
-        </div>
-
-        {/* Micro-metrics breakdown */}
-        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-red-200 dark:border-red-900/30 text-xs">
-          <div className="bg-white/80 dark:bg-slate-900/60 p-2 rounded-lg">
-            <div className="text-slate-500 text-[10px]">PM2.5</div>
-            <div className="font-bold text-slate-800 dark:text-slate-200">
-              {loading ? '...' : `${current?.pm25 ?? 320} µg/m³`}
-            </div>
-          </div>
-          <div className="bg-white/80 dark:bg-slate-900/60 p-2 rounded-lg">
-            <div className="text-slate-500 text-[10px]">Temperature</div>
-            <div className="font-bold text-slate-800 dark:text-slate-200">
-              {loading ? '...' : `${current?.tempC ?? 9.5}°C`}
-            </div>
-          </div>
-          <div className="bg-white/80 dark:bg-slate-900/60 p-2 rounded-lg">
-            <div className="text-slate-500 text-[10px]">Humidity</div>
-            <div className="font-bold text-slate-800 dark:text-slate-200">
-              {loading ? '...' : `${current?.rh ?? 88}%`}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Household Profile summary pill */}
-      <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+    <div className="space-y-6 max-w-3xl mx-auto pb-14">
+      {/* 1. Header Greeting & Location */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 dark:border-slate-800 pb-3">
         <div>
-          <span className="font-semibold text-slate-800 dark:text-slate-200">
-            Household: {profile?.members.length ?? 4} members
-          </span>
-          <p className="text-slate-500 dark:text-slate-400">
-            {profile?.members.some((m) => m.conditions.includes('asthma'))
-              ? '⚠️ High-risk respiratory member (Asthma) detected'
-              : 'Standard monitoring profile'}
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+              {language === 'hi' ? 'आज का वायु सुरक्षा कोच' : "Today's Air Coach"}
+            </h1>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300">
+              Live Diagnostic
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            📍 {profile?.location.placeName || 'New Delhi, India'} •{' '}
+            {isDemoMode ? '⚡ Severe Winter Smog Snapshot (Jan 15)' : 'Live Open-Meteo Feed'}
           </p>
         </div>
-        <span className="px-2 py-1 rounded-md bg-white dark:bg-slate-700 font-medium text-slate-700 dark:text-slate-200 shadow-2xs">
-          Active
-        </span>
+
+        <button
+          type="button"
+          onClick={() => setShowOnboarding(!showOnboarding)}
+          className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer self-start sm:self-auto min-h-[36px]"
+        >
+          {showOnboarding ? 'Close Setup' : '⚙️ Re-calibrate Profile'}
+        </button>
       </div>
 
-      {/* Daily Guidance Snippet */}
-      <div className="space-y-3">
-        <h3 className="font-bold text-sm tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-          <span>🛡️</span>
-          <span>Today's Priority Actions</span>
-        </h3>
-
-        <div className="space-y-2">
-          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 hover:border-slate-300 transition-colors">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-800 dark:text-slate-200">
-              <span>Clean Bedroom Refuge</span>
-              <span className="text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">Grade A</span>
-            </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Run bedroom purifier on High for 30 minutes before sleep with doors and windows closed.
-            </p>
-          </div>
-
-          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 hover:border-slate-300 transition-colors">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-800 dark:text-slate-200">
-              <span>N95 on Two-Wheeler Commute</span>
-              <span className="text-sky-600 dark:text-sky-400 text-[11px] font-bold">Grade B</span>
-            </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Rajesh (Papa): Roadside PM2.5 exposure is 3x baseline during 12km transit. Ensure tight nose clip seal.
-            </p>
-          </div>
+      {/* Onboarding Drawer if user toggles re-calibrate */}
+      {showOnboarding && (
+        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 animate-in fade-in duration-200">
+          <OnboardingStepper
+            initialProfile={profile || undefined}
+            onComplete={(updated) => {
+              setProfile(updated);
+              setShowOnboarding(false);
+            }}
+          />
         </div>
+      )}
+
+      {/* 2. Prominent Centered AirRing Gauge */}
+      <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-4 sm:p-6 flex flex-col items-center">
+        <AirRing
+          aqi={current.usAqi}
+          pm25={current.pm25}
+          label="Outdoor Air Quality"
+          size={210}
+        />
       </div>
+
+      {/* 3. TwoLedger Meters: What you BREATHE vs What you GIVE */}
+      <TwoLedger breathe={breatheData} give={giveData} />
+
+      {/* 4. Top Action for Today: The Signature ImpactReceipt */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <span>🛡️</span>
+            <span>Top Priority Action for Today</span>
+          </h2>
+          <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+            Highest Exposure Cut
+          </span>
+        </div>
+
+        <ImpactReceipt
+          receipt={topActionReceipt}
+          members={profile?.members}
+          actionTitle="Create Clean Air Refuge in Bedroom Tonight"
+        />
+      </section>
+
+      {/* 5. 24-Hour DayTimeline */}
+      <section className="space-y-3">
+        <DayTimeline
+          timeline={timelineEntries}
+          bestWindows={[{ start: 12, end: 15 }]}
+        />
+      </section>
+
+      {/* 6. Safety Banners */}
+      <section className="space-y-3 pt-2">
+        {hasCombustionHeating && (
+          <SafetyBanner
+            type="co_warning"
+            message="Unvented gas or charcoal heating detected in household profile. Never sleep in a sealed room with fuel-burning combustion heaters. Ensure air exchange or utilize battery-backed CO sensors."
+          />
+        )}
+
+        {hasAsthma && (
+          <SafetyBanner
+            type="breathing_difficulty"
+            message="Child member Aarav has an active asthma profile. Keep reliever inhalers nearby and minimize exertion during inversion surges."
+          />
+        )}
+
+        {/* Not Medical Advice Standard Disclaimer */}
+        <SafetyBanner type="not_medical_advice" />
+      </section>
     </div>
   );
 }

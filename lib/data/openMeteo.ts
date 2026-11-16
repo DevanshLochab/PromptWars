@@ -119,6 +119,7 @@ export async function getAirQuality(
     const pm25List: number[] = aqData.hourly?.pm2_5 || [];
     const pm10List: number[] = aqData.hourly?.pm10 || [];
     const no2List: number[] = aqData.hourly?.nitrogen_dioxide || [];
+    const coList: number[] = aqData.hourly?.carbon_monoxide || [];
     const o3List: number[] = aqData.hourly?.ozone || [];
     const aqiList: number[] = aqData.hourly?.us_aqi || [];
 
@@ -131,6 +132,7 @@ export async function getAirQuality(
       pm25: pm25List[idx] ?? 0,
       pm10: pm10List[idx] ?? 0,
       no2: no2List[idx] ?? 0,
+      co: coList[idx] ?? 0,
       o3: o3List[idx] ?? 0,
       usAqi: aqiList[idx] ?? 0,
       tempC: tempList[idx] ?? 20,

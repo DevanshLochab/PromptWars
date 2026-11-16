@@ -138,6 +138,7 @@ export const HourlyAirSchema = z.object({
   pm25: z.number(),
   pm10: z.number(),
   no2: z.number(),
+  co: z.number().default(0), // carbon monoxide (µg/m³)
   o3: z.number(),
   usAqi: z.number(),
   tempC: z.number(),
