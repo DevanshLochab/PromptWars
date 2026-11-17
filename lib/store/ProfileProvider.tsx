@@ -1,7 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { HouseholdProfile } from '@/lib/schemas';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { HouseholdProfile, Location, Language } from '@/lib/schemas';
 import {
   getStoredProfile,
   saveStoredProfile,
@@ -16,12 +16,17 @@ import {
 interface ProfileContextType {
   profile: HouseholdProfile | null;
   isDemoMode: boolean;
-  language: 'en' | 'hi';
+  language: Language;
   isLoaded: boolean;
   onboardingComplete: boolean;
+  isSettingsOpen: boolean;
+  openSettings: () => void;
+  closeSettings: () => void;
+  toggleSettings: () => void;
   setOnboardingComplete: (complete: boolean) => void;
   setProfile: (profile: HouseholdProfile) => void;
-  updateLanguage: (lang: 'en' | 'hi') => void;
+  updateLanguage: (lang: Language) => void;
+  updateLocation: (location: Location) => void;
   toggleDemoMode: (enabled?: boolean) => void;
   setDemoMode: (enabled: boolean) => void;
   resetAllData: () => void;
@@ -32,9 +37,10 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfileState] = useState<HouseholdProfile | null>(null);
   const [isDemoMode, setIsDemoMode] = useState<boolean>(true);
-  const [language, setLanguage] = useState<'en' | 'hi'>('en');
+  const [language, setLanguage] = useState<Language>('en');
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [onboardingComplete, setOnboardingCompleteState] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const demo = isDemoModeEnabled();
@@ -44,9 +50,40 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     const complete = isOnboardingComplete();
     setOnboardingCompleteState(complete);
     if (loaded?.language) {
-      setLanguage(loaded.language);
+      setLanguage(loaded.language as Language);
     }
     setIsLoaded(true);
+
+    const handleOpenSettingsEvent = () => setIsSettingsOpen(true);
+    const checkHash = () => {
+      if (typeof window !== 'undefined' && window.location.hash === '#settings') {
+        setIsSettingsOpen(true);
+      }
+    };
+
+    checkHash();
+    window.addEventListener('saans_open_settings', handleOpenSettingsEvent);
+    window.addEventListener('hashchange', checkHash);
+
+    return () => {
+      window.removeEventListener('saans_open_settings', handleOpenSettingsEvent);
+      window.removeEventListener('hashchange', checkHash);
+    };
+  }, []);
+
+  const openSettings = useCallback(() => {
+    setIsSettingsOpen(true);
+  }, []);
+
+  const closeSettings = useCallback(() => {
+    setIsSettingsOpen(false);
+    if (typeof window !== 'undefined' && window.location.hash === '#settings') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }, []);
+
+  const toggleSettings = useCallback(() => {
+    setIsSettingsOpen((prev) => !prev);
   }, []);
 
   const setOnboardingComplete = (complete: boolean) => {
@@ -58,15 +95,29 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     setProfileState(newProfile);
     saveStoredProfile(newProfile);
     if (newProfile.language) {
-      setLanguage(newProfile.language);
+      setLanguage(newProfile.language as Language);
     }
   };
 
-  const updateLanguage = (lang: 'en' | 'hi') => {
+  const updateLanguage = (lang: Language) => {
     setLanguage(lang);
     if (profile) {
       const updated = { ...profile, language: lang };
       setProfile(updated);
+    }
+  };
+
+  const updateLocation = (location: Location) => {
+    if (profile) {
+      const updated: HouseholdProfile = { ...profile, location };
+      setProfile(updated);
+    } else {
+      const demo = getDefaultDemoProfile();
+      const updated: HouseholdProfile = { ...demo, location };
+      setProfile(updated);
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('saans_location_updated', { detail: location }));
     }
   };
 
@@ -92,6 +143,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     setProfileState(null);
     setLanguage('en');
     setOnboardingCompleteState(false);
+    closeSettings();
   };
 
   return (
@@ -102,9 +154,14 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         language,
         isLoaded,
         onboardingComplete,
+        isSettingsOpen,
+        openSettings,
+        closeSettings,
+        toggleSettings,
         setOnboardingComplete,
         setProfile,
         updateLanguage,
+        updateLocation,
         toggleDemoMode,
         setDemoMode,
         resetAllData,

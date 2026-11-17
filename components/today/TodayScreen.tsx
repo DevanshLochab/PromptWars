@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { MapPin } from 'lucide-react';
 import { useProfile } from '@/lib/store/ProfileProvider';
 import { useTranslation } from '@/lib/i18n';
 import { getDefaultDemoProfile } from '@/lib/store/profileStore';
@@ -69,6 +70,7 @@ export function TodayScreen({
   const isHi = lang === 'hi';
   const effectiveProfile =
     propProfile || store.profile || (store.isDemoMode ? getDefaultDemoProfile() : null);
+  const cityName = effectiveProfile?.location?.placeName?.split(',')[0] || 'New Delhi';
 
   // 1. Air Quality Data Snapshot
   const current = propHourlyData?.[0] ?? {
@@ -303,9 +305,21 @@ export function TodayScreen({
         aria-label="Air Now current conditions"
         className="rounded-[var(--radius-card)] p-6 sm:p-8 bg-[var(--surface)] border border-[var(--border)] shadow-xs flex flex-col items-center text-center"
       >
-        <p className="text-xs text-[var(--muted)] font-semibold uppercase tracking-wider mb-2">
-          {isHi ? 'US AQI · १२ मिनट पहले अपडेट' : 'US AQI · updated 12 min ago'}
-        </p>
+        <div className="flex items-center gap-1.5 mb-2">
+          <span className="text-xs text-[var(--muted)] font-semibold uppercase tracking-wider">
+            {isHi ? 'US AQI · १२ मिनट पहले अपडेट' : 'US AQI · updated 12 min ago'}
+          </span>
+          <span className="text-xs text-[var(--muted)]">·</span>
+          <button
+            type="button"
+            onClick={store.openSettings}
+            className="inline-flex items-center gap-1 text-xs font-bold text-[var(--primary)] hover:underline cursor-pointer"
+            title="Change City"
+          >
+            <MapPin size={12} />
+            <span>{cityName}</span>
+          </button>
+        </div>
 
         {/* Large AQI Number styled with band color */}
         <div

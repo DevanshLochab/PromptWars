@@ -118,7 +118,18 @@ export const ConstraintsSchema = z.object({
 export type Constraints = z.infer<typeof ConstraintsSchema>;
 
 // Household Profile
-export const LanguageEnum = z.enum(['en', 'hi']);
+export const LanguageEnum = z.enum([
+  'en',
+  'hi',
+  'bn',
+  'mr',
+  'te',
+  'ta',
+  'gu',
+  'kn',
+  'pa',
+]);
+export type Language = z.infer<typeof LanguageEnum>;
 
 export const HouseholdProfileSchema = z.object({
   location: LocationSchema,

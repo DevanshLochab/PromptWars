@@ -144,7 +144,7 @@ export function MythCheckCard({
     if (effectiveCitations && effectiveCitations.length > 0) {
       parts.push(`Evidence Sources:\n${effectiveCitations.map((c) => `• ${c.title}: ${c.url}`).join('\n')}`);
     }
-    parts.push('— Saans Air Quality Coach (Gemini + Google Search)');
+    parts.push('— Saans Air Quality Coach (Gemini)');
 
     try {
       await navigator.clipboard.writeText(parts.join('\n\n'));
@@ -279,7 +279,7 @@ export function MythCheckCard({
 
       {/* Footer */}
       <div className="pt-2 border-t border-[var(--border)]/60 flex items-center justify-between text-[11px] text-[var(--muted)]">
-        <span>Answered with Gemini + Google Search · not medical advice</span>
+        <span>Answered with Gemini · not medical advice</span>
         {timestamp && <span className="opacity-75">{timestamp}</span>}
       </div>
     </div>

@@ -3,66 +3,73 @@
 import React, { useState } from 'react';
 import { AskChat } from '@/components/ask/AskChat';
 import { MythCheckCard, MythCheckItem } from '@/components/ask/MythCheckCard';
-import { useTranslation } from '@/lib/i18n';
+import { useTranslation, Language } from '@/lib/i18n';
 import { WhatsAppSummary } from '@/components/common/WhatsAppSummary';
-
-const FEATURED_MYTHS: MythCheckItem[] = [
-  {
-    claim: 'Keeping 3 snake plants in the bedroom removes 90% of winter smog particles.',
-    evidenceSays:
-      'Field studies and EPA reviews confirm that houseplants remove zero fine particulate matter (PM2.5). In real homes with standard 0.5 ACH ventilation, you would need over 100 plants per square meter to match a basic HEPA purifier CADR.',
-    shortAnswer: 'Houseplants do not filter airborne PM2.5 soot or smoke particles in real homes.',
-    verdict: 'myth',
-    whatToDoInstead:
-      'Use a mechanical HEPA purifier or build a DIY Corsi-Rosenthal box fan air cleaner with MERV-13 filters.',
-    citations: [
-      { title: 'Waring et al. (Nature J Exp Sci 2020)', url: 'https://www.nature.com/articles/s41370-019-0175-9' },
-      { title: 'EPA IAQ Plants Guide', url: 'https://www.epa.gov' },
-    ],
-  },
-  {
-    claim: 'Eating a spoonful of jaggery (gur) after coming home cleans smog from your lungs.',
-    evidenceSays:
-      'Fine PM2.5 penetrates deep into pulmonary alveoli and enters the bloodstream. Ingested jaggery enters the stomach/digestive tract with no physiological pathway to reach or clear lung alveoli. Jaggery provides calories and trace iron, but zero respiratory particulate detox.',
-    shortAnswer: 'Dietary intake goes to the stomach, whereas inhaled PM2.5 is trapped in lung alveoli.',
-    verdict: 'myth',
-    whatToDoInstead:
-      'Wear a sealed N95/FFP2 respirator during outdoor transit and keep bedroom windows sealed during peak smog hours.',
-    citations: [
-      { title: 'WHO Air Pollution Health Guidance', url: 'https://www.who.int' },
-      { title: 'American Lung Association: Inhaled Particulates', url: 'https://www.lung.org' },
-    ],
-  },
-  {
-    claim: 'Wearing a simple cloth handkerchief or bandana protects against 350+ AQI smog.',
-    evidenceSays:
-      'Cloth weave apertures (20–100 µm) are orders of magnitude larger than sub-micron PM2.5 soot (0.1–2.5 µm). Controlled NIOSH tests show cloth barriers filter less than 15–20% of particles and have massive peripheral seal leaks.',
-    shortAnswer: 'Cloth masks lack electrostatic filtration media and leak contaminated air around edges.',
-    verdict: 'myth',
-    whatToDoInstead:
-      'Use a certified NIOSH N95, EN149 FFP2, or BIS ISI 9473 rated cup- or bifold-style respirator with an airtight nose-clip seal.',
-    citations: [
-      { title: 'CDC/NIOSH Respirator Efficacy Studies', url: 'https://www.cdc.gov/niosh' },
-    ],
-  },
-  {
-    claim: 'Using an ozone generator or ionic air cleaner purifies room air safely.',
-    evidenceSays:
-      'Ozone (O3) chemically attacks and denatures lung epithelial tissue at concentrations as low as 0.05 ppm, triggering severe asthma attacks and permanent bronchial harm. EPA, CARB, and WHO strictly prohibit ozone-emitting cleaners.',
-    shortAnswer: 'Ozone is a toxic pulmonary irritant that destroys lung tissue and generates formaldehyde.',
-    verdict: 'myth',
-    whatToDoInstead:
-      'Use strictly mechanical HEPA filtration units with CARB zero-ozone certification.',
-    citations: [
-      { title: 'EPA: Ozone Generators Sold as Air Cleaners', url: 'https://www.epa.gov/iaq' },
-      { title: 'CARB Air Cleaner Certification', url: 'https://ww2.arb.ca.gov' },
-    ],
-  },
-];
+import { useProfile } from '@/lib/store/ProfileProvider';
+import { Sparkles, Search, Loader2, ArrowRight } from 'lucide-react';
+import { EvidenceGrade } from '@/components/receipt/EvidenceBadge';
 
 export default function AskPage() {
   const { t } = useTranslation();
+  const { profile, language } = useProfile();
   const [activeTab, setActiveTab] = useState<'chat' | 'myths'>('chat');
+
+  // Interactive Live AI Myth Buster state
+  const [claimInput, setClaimInput] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [customVerifiedMyth, setCustomVerifiedMyth] = useState<MythCheckItem | null>(null);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+
+  const handleVerifyClaim = async (claimToTest?: string) => {
+    const q = (claimToTest || claimInput).trim();
+    if (!q || isVerifying) return;
+
+    if (claimToTest) setClaimInput(claimToTest);
+    setIsVerifying(true);
+    setVerifyError(null);
+    setCustomVerifiedMyth(null);
+
+    try {
+      const res = await fetch('/api/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q, profile, language }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Verification failed with status ${res.status}`);
+      }
+
+      const data = await res.json();
+      const grade = (data.evidenceGrade as EvidenceGrade) || 'D';
+      const isMyth = Boolean(data.isMyth);
+      let verdict: 'myth' | 'works' | 'partly' | 'depends' = 'depends';
+      if (isMyth || grade === 'D') verdict = 'myth';
+      else if (grade === 'A') verdict = 'works';
+      else if (grade === 'B' || grade === 'C') verdict = 'partly';
+
+      setCustomVerifiedMyth({
+        claim: q,
+        shortAnswer: data.shortAnswer,
+        evidenceSays: data.evidenceExplanation || data.answer || '',
+        verdict,
+        whatToDoInstead: data.whatToDoInstead,
+        citations: data.citations || [],
+      });
+    } catch (err) {
+      console.error('Myth verification error:', err);
+      setVerifyError(err instanceof Error ? err.message : 'Failed to verify claim. Please try again.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const sampleClaims = [
+    'Eating a spoonful of jaggery (gur) cleans smog from your lungs',
+    'Keeping snake plants in the bedroom removes 90% of winter smog',
+    'Wearing a simple cloth handkerchief protects against severe AQI smog',
+    'Using an ozone generator purifies indoor air safely',
+  ];
 
   return (
     <div className="max-w-3xl mx-auto min-h-dvh flex flex-col">
@@ -73,7 +80,7 @@ export default function AskPage() {
             Ask Saans
           </h1>
           <p className="text-xs text-[var(--muted)]">
-            {t('ask.subtitle') || 'Evidence-grounded air quality coach · Gemini + Google Search'}
+            {t('ask.subtitle') || 'Evidence-grounded air quality coach · Gemini AI'}
           </p>
         </div>
         <WhatsAppSummary />
@@ -101,7 +108,7 @@ export default function AskPage() {
               : 'border-transparent text-[var(--muted)] hover:text-[var(--text)]'
           }`}
         >
-          🚫 Common Myths Debunked
+          🚫 Live AI Myth Buster
         </button>
       </div>
 
@@ -111,19 +118,95 @@ export default function AskPage() {
           <AskChat />
         </div>
       ) : (
-        <div className="space-y-4 animate-in fade-in duration-200 pb-20">
-          <div className="p-3.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-xs text-[var(--muted)] shadow-2xs">
+        <div className="space-y-6 animate-in fade-in duration-200 pb-20">
+          {/* Interactive Live AI Myth Buster Card */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm font-bold text-[var(--text)]">
+                <Sparkles size={18} className="text-[var(--primary)]" />
+                <span>Test Any WhatsApp / Social Media Claim with AI</span>
+              </div>
+              <p className="text-xs text-[var(--muted)]">
+                Heard a folk remedy or air purifier marketing claim? Type it below to evaluate against peer-reviewed atmospheric physics and WHO guidelines:
+              </p>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleVerifyClaim();
+              }}
+              className="space-y-2"
+            >
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={claimInput}
+                  onChange={(e) => setClaimInput(e.target.value)}
+                  placeholder="e.g. Eating jaggery cleans lungs, or plants replace air filters..."
+                  disabled={isVerifying}
+                  className="flex-1 px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text)] placeholder-[var(--muted)] focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]"
+                />
+                <button
+                  type="submit"
+                  disabled={!claimInput.trim() || isVerifying}
+                  className="px-4 py-2.5 text-xs font-bold rounded-xl bg-[var(--primary)] text-[var(--on-primary)] hover:opacity-90 disabled:opacity-50 transition-all flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed shrink-0 shadow-xs"
+                >
+                  {isVerifying ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>Verifying...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Search size={14} />
+                      <span>Verify with AI</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Quick sample chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[11px] text-[var(--muted)] font-medium">Try:</span>
+                {sampleClaims.map((claim, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleVerifyClaim(claim)}
+                    className="text-[11px] px-2.5 py-1 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--primary)] transition-colors cursor-pointer text-left"
+                  >
+                    {claim}
+                  </button>
+                ))}
+              </div>
+            </form>
+
+            {verifyError && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300 text-xs">
+                {verifyError}
+              </div>
+            )}
+
+            {/* Display AI verified result */}
+            {customVerifiedMyth && (
+              <div className="pt-2 animate-in fade-in duration-300">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--primary)] mb-2">
+                  Live AI Verification Result:
+                </p>
+                <MythCheckCard item={customVerifiedMyth} />
+              </div>
+            )}
+          </div>
+
+          {/* Context Explainer */}
+          <div className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] text-xs text-[var(--muted)] shadow-2xs">
             <span className="font-bold text-[var(--text)]">
-              Evidence-Based Myth Verification:
+              Evidence-Based Verification Standards:
             </span>{' '}
             During severe winter pollution peaks, unproven folk remedies circulate widely on WhatsApp and social media,
             diverting families from effective measures like sealed HEPA purifiers and certified N95 respirators.
-          </div>
-
-          <div className="space-y-4">
-            {FEATURED_MYTHS.map((myth, idx) => (
-              <MythCheckCard key={idx} item={myth} />
-            ))}
+            Saans grades all claims with zero commercial bias.
           </div>
         </div>
       )}

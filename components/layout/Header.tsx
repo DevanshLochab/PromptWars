@@ -1,24 +1,26 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Settings } from 'lucide-react';
-import { SettingsDrawer } from './SettingsDrawer';
+import { Settings, MapPin } from 'lucide-react';
 import { useProfile } from '@/lib/store/ProfileProvider';
 import { getAirQuality } from '@/lib/data/openMeteo';
 import { useLedgerStore } from '@/lib/store/ledgerStore';
 
 export function Header() {
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const { profile, isDemoMode, openSettings } = useProfile();
   const ledger = useLedgerStore();
   const [currentAqi, setCurrentAqi] = useState<number | null>(ledger?.currentAQI ?? 167);
-  const { profile, isDemoMode } = useProfile();
+
+  const cityName = profile?.location.placeName
+    ? profile.location.placeName.split(',')[0].trim()
+    : 'New Delhi';
 
   useEffect(() => {
     async function loadAqi() {
       try {
         const lat = profile?.location.lat ?? 28.6139;
         const lon = profile?.location.lon ?? 77.209;
-        const data = await getAirQuality(lat, lon);
+        const data = await getAirQuality(lat, lon, !isDemoMode);
         if (data && data.length > 0 && data[0]?.usAqi !== undefined) {
           setCurrentAqi(data[0].usAqi);
         }
@@ -27,7 +29,7 @@ export function Header() {
       }
     }
     loadAqi();
-  }, [profile, isDemoMode]);
+  }, [profile?.location.lat, profile?.location.lon, isDemoMode]);
 
   const getAqiBadgeColor = (aqi: number | null) => {
     if (aqi === null) return 'bg-[var(--surface-2)] text-[var(--muted)] border-[var(--border)]';
@@ -39,49 +41,49 @@ export function Header() {
     return 'bg-red-950/20 text-red-700 dark:text-red-300 border-red-800/40';
   };
 
-  const handleOpenSettings = () => {
-    setIsSettingsOpen(true);
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('saans_open_settings'));
-    }
-  };
-
   return (
-    <>
-      <header className="sticky top-0 z-30 w-full bg-[var(--surface)]/90 backdrop-blur-md border-b border-[var(--border)] transition-colors">
-        <div className="max-w-md lg:max-w-none mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-bold tracking-tight text-[var(--text)]">
-              सांस <span className="text-[var(--primary)] font-bold text-lg">Saans</span>
-            </span>
-          </div>
+    <header className="sticky top-0 z-30 w-full bg-[var(--surface)]/90 backdrop-blur-md border-b border-[var(--border)] transition-colors">
+      <div className="max-w-md lg:max-w-none mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-bold tracking-tight text-[var(--text)]">
+            सांस <span className="text-[var(--primary)] font-bold text-lg">Saans</span>
+          </span>
 
-          <div className="flex items-center gap-2.5">
-            {currentAqi !== null && (
-              <div
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-pill)] border text-xs font-semibold shadow-xs ${getAqiBadgeColor(
-                  currentAqi
-                )}`}
-                title="Current Ambient US AQI"
-              >
-                <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-                <span>AQI {currentAqi}</span>
-              </div>
-            )}
-
-            <button
-              onClick={handleOpenSettings}
-              className="p-2 rounded-[var(--radius-pill)] text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors"
-              aria-label="Settings"
-            >
-              <Settings size={20} />
-            </button>
-          </div>
+          {/* City pill button */}
+          <button
+            type="button"
+            onClick={openSettings}
+            className="flex items-center gap-1 px-2 py-0.5 rounded-[var(--radius-pill)] bg-[var(--surface-2)] border border-[var(--border)] text-[11px] font-semibold text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
+            title="Click to change city"
+          >
+            <MapPin size={11} className="text-[var(--primary)] shrink-0" />
+            <span className="truncate max-w-[100px]">{cityName}</span>
+          </button>
         </div>
-      </header>
 
-      <SettingsDrawer isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-    </>
+        <div className="flex items-center gap-2.5">
+          {currentAqi !== null && (
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-pill)] border text-xs font-semibold shadow-xs ${getAqiBadgeColor(
+                currentAqi
+              )}`}
+              title="Current Ambient US AQI"
+            >
+              <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+              <span>AQI {currentAqi}</span>
+            </div>
+          )}
+
+          <button
+            onClick={openSettings}
+            className="p-2 rounded-[var(--radius-pill)] text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors cursor-pointer"
+            aria-label="Settings"
+          >
+            <Settings size={20} />
+          </button>
+        </div>
+      </div>
+    </header>
   );
 }
 

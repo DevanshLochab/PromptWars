@@ -6,6 +6,7 @@ import {
   PlanTimelineEntry,
   PlanTopAction,
   Receipt,
+  Language,
 } from '@/lib/schemas';
 import { rankActions, bestWindows, aqiBand } from '@/lib/engine';
 import demoSnapshot from '@/data/demo_snapshot.json';
@@ -127,7 +128,7 @@ export function generateFallbackPlan(
   profile: HouseholdProfile,
   hourlyAir?: HourlyAir[],
   receipts?: Receipt[],
-  language: 'en' | 'hi' = 'en'
+  language: Language = 'en'
 ): Plan {
   const airData =
     hourlyAir && hourlyAir.length >= 24

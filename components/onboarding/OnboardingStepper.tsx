@@ -27,6 +27,8 @@ import {
   Camera,
   Sparkles,
   Sliders,
+  MapPin,
+  Globe,
 } from 'lucide-react';
 import {
   HouseholdProfile,
@@ -38,6 +40,9 @@ import {
   HouseholdProfileSchema,
 } from '@/lib/schemas';
 import demoSnapshot from '@/data/demo_snapshot.json';
+import { CitySelector } from '@/components/common/CitySelector';
+import { SUPPORTED_LANGUAGES, Language } from '@/lib/i18n';
+import { useProfile } from '@/lib/store/ProfileProvider';
 
 export interface OnboardingStepperProps {
   onComplete: (profile: HouseholdProfile) => void;
@@ -74,10 +79,16 @@ export function OnboardingStepper({
     };
   }, []);
 
+  const { language: currentLang, updateLanguage } = useProfile();
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>(
+    (initialProfile?.language as Language) || currentLang || 'en'
+  );
+
   // Location
-  const [location] = useState<Location>(
+  const [location, setLocation] = useState<Location>(
     initialProfile?.location || (demoSnapshot.profile.location as Location)
   );
+  const [isSelectingCity, setIsSelectingCity] = useState(false);
 
   // STEP 1 STATE: Household Members (max 3)
   const initialMembers: MemberFormItem[] = initialProfile?.members?.slice(0, 3).map((m, idx) => ({
@@ -269,7 +280,7 @@ export function OnboardingStepper({
 
     const finalProfile: HouseholdProfile = {
       location,
-      language: 'en',
+      language: selectedLanguage,
       units: 'metric',
       home: homeData,
       devices: finalDevices,
@@ -360,6 +371,92 @@ export function OnboardingStepper({
           {/* ================= STEP 1: WHO'S AT HOME? ================= */}
           {currentStep === 1 && (
             <div className="space-y-6 animate-in fade-in duration-200">
+              {/* City & Airshed Selection Card */}
+              <div className="p-4 rounded-[var(--radius-card)] bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MapPin size={18} className="text-[var(--primary)]" />
+                    <div>
+                      <span className="font-bold text-sm text-[var(--text)] block">
+                        Your City & Airshed
+                      </span>
+                      <span className="text-xs text-[var(--muted)]">
+                        Select your Indian city or state for localized air monitoring
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsSelectingCity((prev) => !prev)}
+                    className="text-xs font-semibold text-[var(--primary)] hover:underline cursor-pointer"
+                  >
+                    {isSelectingCity ? 'Done' : 'Change City'}
+                  </button>
+                </div>
+
+                {!isSelectingCity ? (
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border)]">
+                    <div>
+                      <p className="font-bold text-sm text-[var(--text)]">{location.placeName}</p>
+                      <p className="text-[11px] text-[var(--muted)]">
+                        Coordinates: {location.lat.toFixed(2)}°N, {location.lon.toFixed(2)}°E
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsSelectingCity(true)}
+                      className="px-3 py-1.5 rounded-lg bg-[var(--primary)] text-[var(--on-primary)] text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+                    >
+                      Change City
+                    </button>
+                  </div>
+                ) : (
+                  <div className="pt-2">
+                    <CitySelector
+                      currentLocation={location}
+                      onSelect={(newLoc) => {
+                        setLocation(newLoc);
+                        setIsSelectingCity(false);
+                      }}
+                      onCancel={() => setIsSelectingCity(false)}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Language Selection Option */}
+              <div className="p-4 rounded-[var(--radius-card)] bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <Globe size={18} className="text-[var(--primary)]" />
+                  <span className="font-bold text-sm text-[var(--text)]">
+                    Language Preference / भाषा
+                  </span>
+                </div>
+                <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                  {SUPPORTED_LANGUAGES.map((l) => {
+                    const active = selectedLanguage === l.code;
+                    return (
+                      <button
+                        key={l.code}
+                        type="button"
+                        onClick={() => {
+                          setSelectedLanguage(l.code);
+                          updateLanguage(l.code);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 border ${
+                          active
+                            ? 'bg-[var(--primary)] text-[var(--on-primary)] border-[var(--primary)] shadow-xs'
+                            : 'bg-[var(--surface-2)] text-[var(--text)] border-[var(--border)] hover:bg-[var(--surface)]'
+                        }`}
+                      >
+                        {active && <Check size={12} strokeWidth={3} />}
+                        <span>{l.native}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="space-y-1">
                 <h2 className="text-2xl font-extrabold text-[var(--text)] tracking-tight">
                   Who&apos;s at home?

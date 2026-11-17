@@ -415,10 +415,8 @@ Please regenerate the JSON plan fixing these violations. Use reference tokens [[
     }
   }
 
-  // 2. Backup Cascade: Mistral AI API / NVIDIA AI API (GLM & GLM Fast) / Direct GLM API
   if (hasAnyAiKey()) {
     try {
-      console.log('[DailyPlan] Attempting backup AI cascade (Mistral / NVIDIA GLM)...');
       const ranked = rankActions(profile, airData);
       for (const item of ranked) {
         receiptsLookup[item.action.id] = item.receipt;

@@ -1,18 +1,52 @@
 /**
  * Saans i18n System
- * Provides multi-lingual translations (EN/HI) with parameter interpolation
- * and React hook integration.
+ * Provides multi-lingual translations across Indian regional languages
+ * with parameter interpolation and React hook integration.
  */
 
 import { en } from './en';
 import { hi } from './hi';
+import { bn } from './bn';
+import { mr } from './mr';
+import { te } from './te';
+import { ta } from './ta';
+import { gu } from './gu';
+import { kn } from './kn';
+import { pa } from './pa';
 import { useProfile } from '@/lib/store/ProfileProvider';
+import { Language } from '@/lib/schemas';
 
-export type Language = 'en' | 'hi';
+export type { Language };
+
+export interface SupportedLanguageInfo {
+  code: Language;
+  label: string;
+  native: string;
+  region: string;
+}
+
+export const SUPPORTED_LANGUAGES: SupportedLanguageInfo[] = [
+  { code: 'en', label: 'English', native: 'English', region: 'All India' },
+  { code: 'hi', label: 'Hindi', native: 'हिन्दी', region: 'North & Central India' },
+  { code: 'bn', label: 'Bengali', native: 'বাংলা', region: 'West Bengal & Tripura' },
+  { code: 'mr', label: 'Marathi', native: 'मराठी', region: 'Maharashtra' },
+  { code: 'te', label: 'Telugu', native: 'తెలుగు', region: 'Telangana & Andhra Pradesh' },
+  { code: 'ta', label: 'Tamil', native: 'தமிழ்', region: 'Tamil Nadu' },
+  { code: 'gu', label: 'Gujarati', native: 'ગુજરાતી', region: 'Gujarat' },
+  { code: 'kn', label: 'Kannada', native: 'ಕನ್ನಡ', region: 'Karnataka' },
+  { code: 'pa', label: 'Punjabi', native: 'ਪੰਜਾਬੀ', region: 'Punjab & Chandigarh' },
+];
 
 const catalogues: Record<Language, Record<string, string>> = {
   en,
   hi,
+  bn,
+  mr,
+  te,
+  ta,
+  gu,
+  kn,
+  pa,
 };
 
 /**
@@ -52,4 +86,4 @@ export function useTranslation() {
   };
 }
 
-export { en, hi };
+export { en, hi, bn, mr, te, ta, gu, kn, pa };
