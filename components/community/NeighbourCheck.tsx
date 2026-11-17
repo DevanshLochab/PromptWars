@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '@/lib/i18n';
+import { Heart, Plus, Phone, Trash2, ShieldAlert, User, MessageCircle } from 'lucide-react';
 
 export interface NeighbourItem {
   id: string;
@@ -99,36 +100,47 @@ export function NeighbourCheck() {
     return cleanPhone ? `https://wa.me/${cleanPhone}?text=${message}` : `https://wa.me/?text=${message}`;
   };
 
+  const isVulnerable = (itemTag?: string) => {
+    return itemTag === 'elderly' || itemTag === 'asthma' || itemTag === 'infant' || itemTag === 'child';
+  };
+
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-xs space-y-4">
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-xs space-y-4 transition-all">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
+      <div className="flex items-center justify-between gap-3">
+        <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <span className="text-xl">🤝</span>
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+            <div className="w-8 h-8 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+              <Heart className="w-4 h-4 fill-rose-500/30 text-rose-500" />
+            </div>
+            <h2 className="text-base font-bold text-[var(--text)]">
               {t('neighbour.title')}
             </h2>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-[var(--muted)]">
             {t('neighbour.desc')}
           </p>
         </div>
+
         <button
           type="button"
           onClick={() => setShowAddForm(!showAddForm)}
-          className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-950/60 dark:text-sky-300 dark:hover:bg-sky-900 transition-colors border border-sky-200 dark:border-sky-800"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--primary-soft)] text-[var(--primary)] hover:opacity-90 transition-opacity border border-[var(--primary)]/20 shadow-xs shrink-0"
         >
-          {showAddForm ? t('common.cancel') : `+ ${t('neighbour.add_new')}`}
+          <Plus className="w-3.5 h-3.5" />
+          <span>{showAddForm ? t('common.cancel') : t('neighbour.add_new')}</span>
         </button>
       </div>
 
       {/* Add Form */}
       {showAddForm && (
-        <form onSubmit={handleAdd} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3 animate-in fade-in duration-150">
+        <form
+          onSubmit={handleAdd}
+          className="p-4 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] space-y-3 animate-in fade-in duration-150"
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+              <label className="text-[11px] font-bold text-[var(--text)]">
                 {t('neighbour.name')}
               </label>
               <input
@@ -137,11 +149,11 @@ export function NeighbourCheck() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Verma Ji (Flat 304)"
-                className="w-full p-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500"
+                className="w-full p-2 text-xs rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] focus:ring-2 focus:ring-[var(--primary)]"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+              <label className="text-[11px] font-bold text-[var(--text)]">
                 {t('neighbour.contact')}
               </label>
               <input
@@ -149,29 +161,29 @@ export function NeighbourCheck() {
                 value={contact}
                 onChange={(e) => setContact(e.target.value)}
                 placeholder="+91 98..."
-                className="w-full p-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500"
+                className="w-full p-2 text-xs rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] focus:ring-2 focus:ring-[var(--primary)]"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+              <label className="text-[11px] font-bold text-[var(--text)]">
                 Category / Vulnerability
               </label>
               <select
                 value={tag}
                 onChange={(e) => setTag(e.target.value as any)}
-                className="w-full p-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                className="w-full p-2 text-xs rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text)]"
               >
                 <option value="elderly">👴 Elderly Senior Citizen</option>
-                <option value="infant">👶 Infant / Toddler</option>
                 <option value="asthma">🫁 Asthma / Respiratory Vulnerable</option>
+                <option value="infant">👶 Infant / Toddler</option>
                 <option value="general">🏠 General Neighbour</option>
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+              <label className="text-[11px] font-bold text-[var(--text)]">
                 {t('neighbour.note')}
               </label>
               <input
@@ -179,15 +191,22 @@ export function NeighbourCheck() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Special medical or mobility notes..."
-                className="w-full p-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                className="w-full p-2 text-xs rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text)]"
               />
             </div>
           </div>
 
-          <div className="flex justify-end pt-1">
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setShowAddForm(false)}
+              className="px-3 py-1.5 text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)]"
+            >
+              {t('common.cancel')}
+            </button>
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition-colors shadow-xs"
+              className="px-4 py-2 text-xs font-bold bg-[var(--primary)] text-[var(--on-primary)] rounded-lg transition-opacity hover:opacity-90 shadow-xs"
             >
               {t('neighbour.save')}
             </button>
@@ -196,72 +215,84 @@ export function NeighbourCheck() {
       )}
 
       {/* Neighbour List */}
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         {neighbours.length === 0 ? (
-          <p className="text-xs text-slate-400 py-3 text-center">
+          <p className="text-xs text-[var(--muted)] py-6 text-center">
             {t('neighbour.empty')}
           </p>
         ) : (
-          neighbours.map((item) => (
-            <div
-              key={item.id}
-              className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors hover:border-slate-300 dark:hover:border-slate-700"
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">
-                    {item.tag === 'elderly' ? '👴' : item.tag === 'infant' ? '👶' : '🫁'}
-                  </span>
-                  <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                    {item.name}
-                  </span>
-                  {item.contact && (
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                      {item.contact}
+          neighbours.map((item) => {
+            const vulnerable = isVulnerable(item.tag);
+            return (
+              <div
+                key={item.id}
+                className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]/50 hover:bg-[var(--surface-2)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors"
+              >
+                <div className="space-y-1.5 flex-1 min-w-0">
+                  {/* Name chip & Vulnerability badge */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] shadow-2xs">
+                      <span>{item.tag === 'elderly' ? '👴' : item.tag === 'infant' ? '👶' : item.tag === 'asthma' ? '🫁' : '🏠'}</span>
+                      <span>{item.name}</span>
                     </span>
+
+                    {vulnerable && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
+                        <Heart className="w-3 h-3 fill-rose-500 text-rose-500" />
+                        <span>Vulnerable</span>
+                      </span>
+                    )}
+
+                    {item.contact && (
+                      <span className="text-[11px] text-[var(--muted)] font-mono">
+                        {item.contact}
+                      </span>
+                    )}
+                  </div>
+
+                  {item.notes && (
+                    <p className="text-xs text-[var(--muted)] pl-1">
+                      {item.notes}
+                    </p>
                   )}
                 </div>
-                {item.notes && (
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 pl-6">
-                    {item.notes}
-                  </p>
-                )}
-              </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-1.5 self-end sm:self-auto">
-                <a
-                  href={getWhatsAppLink(item.contact, item.name)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-xs flex items-center gap-1"
-                >
-                  <span>💬</span>
-                  <span>WhatsApp</span>
-                </a>
-
-                {item.contact && (
+                {/* Action Buttons: "Check in" (Heart icon) + Call + Remove */}
+                <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
                   <a
-                    href={`tel:${item.contact}`}
-                    className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-200 hover:bg-sky-200 transition-colors flex items-center gap-1"
+                    href={getWhatsAppLink(item.contact, item.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white transition-colors shadow-xs"
+                    title="Check in via WhatsApp"
                   >
-                    <span>📞</span>
-                    <span>Call</span>
+                    <Heart className="w-3.5 h-3.5 fill-white text-white" />
+                    <span>Check in</span>
                   </a>
-                )}
 
-                <button
-                  type="button"
-                  onClick={() => handleRemove(item.id)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                  aria-label="Remove neighbour"
-                  title="Remove neighbour"
-                >
-                  ✕
-                </button>
+                  {item.contact && (
+                    <a
+                      href={`tel:${item.contact}`}
+                      className="p-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+                      title="Call neighbour"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(item.id)}
+                    className="p-1.5 rounded-lg text-[var(--muted)] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    aria-label="Remove neighbour"
+                    title="Remove neighbour"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
