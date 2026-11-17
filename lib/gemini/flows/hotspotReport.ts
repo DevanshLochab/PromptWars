@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { callGemini } from '../callGemini';
-import { hasGeminiApiKey, MODELS } from '../client';
+import { hasAnyAiKey, MODELS } from '../client';
 
 export interface HotspotPhotoInput {
   base64Data: string;
@@ -49,7 +49,7 @@ export async function runHotspotReport(options: {
   const safetyNotice =
     'Mandatory safety advisory: Review all report details before sending. Never confront individuals, workers, or facility owners directly. Prioritize personal safety at all times.';
 
-  if (!hasGeminiApiKey()) {
+  if (!hasAnyAiKey()) {
     return generateFallbackHotspotReport(options.locationText, safetyNotice);
   }
 

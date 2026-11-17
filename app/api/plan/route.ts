@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { HouseholdProfileSchema } from '@/lib/schemas';
 import { runDailyPlan } from '@/lib/gemini/flows/dailyPlan';
 import { generateFallbackPlan } from '@/lib/gemini/fallback';
-import { hasGeminiApiKey } from '@/lib/gemini/client';
+import { hasAnyAiKey } from '@/lib/gemini/client';
 import { getAirQuality } from '@/lib/data/openMeteo';
 
 // Simple in-memory rate limiter per IP / global
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     // Fetch air data
     const airData = await getAirQuality(profile.location.lat, profile.location.lon, !isDemoMode);
 
-    if (isDemoMode || !hasGeminiApiKey()) {
+    if (isDemoMode || !hasAnyAiKey()) {
       const plan = generateFallbackPlan(profile, airData || undefined, undefined, profile.language);
       return NextResponse.json(plan);
     }

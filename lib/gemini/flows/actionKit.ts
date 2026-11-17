@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { callGemini } from '../callGemini';
-import { hasGeminiApiKey, MODELS } from '../client';
+import { hasAnyAiKey, MODELS } from '../client';
 
 export const ActionKitInputSchema = z.object({
   issue: z.string(),
@@ -55,7 +55,7 @@ export async function runActionKit(input: ActionKitInput): Promise<ActionKitOutp
   const language = input.language || 'en';
   const isHindi = language === 'hi';
 
-  if (!hasGeminiApiKey()) {
+  if (!hasAnyAiKey()) {
     return generateFallbackActionKit(input, isHindi);
   }
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { callGemini } from '../callGemini';
-import { hasGeminiApiKey, MODELS } from '../client';
+import { hasAnyAiKey, MODELS } from '../client';
 import { HouseholdProfile } from '@/lib/schemas';
 
 export const AskMythCheckOutputSchema = z.object({
@@ -47,7 +47,7 @@ export async function runAskMythCheck(options: {
       ? 'यह जानकारी केवल सामान्य जागरूकता के लिए है, चिकित्सा सलाह नहीं। स्वास्थ्य संबंधी समस्या में तुरंत डॉक्टर से संपर्क करें।'
       : 'Saans provides environmental exposure guidance, not medical diagnosis or clinical treatment. Always consult a healthcare professional for persistent respiratory symptoms.';
 
-  if (!hasGeminiApiKey()) {
+  if (!hasAnyAiKey()) {
     return generateFallbackAskAnswer(options.question, language, medicalDisclaimer);
   }
 

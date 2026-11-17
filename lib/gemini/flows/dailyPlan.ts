@@ -15,7 +15,8 @@ import {
   createReceiptForAction,
 } from '@/lib/engine';
 import { getAirQuality } from '@/lib/data/openMeteo';
-import { getGeminiClient, hasGeminiApiKey, MODELS } from '../client';
+import { getGeminiClient, hasGeminiApiKey, hasAnyAiKey, MODELS } from '../client';
+import { callGemini } from '../callGemini';
 import { generateFallbackPlan } from '../fallback';
 import {
   substitutePlanTokens,
@@ -141,9 +142,9 @@ export async function runDailyPlan(
 ): Promise<Plan> {
   const language = profile.language || 'en';
 
-  // Fallback immediately if in demo mode or no Gemini API key set
-  if (!hasGeminiApiKey()) {
-    console.log('[DailyPlan] No GEMINI_API_KEY set or offline mode: using deterministic fallback.');
+  // Fallback immediately if in demo mode or no AI API key set
+  if (!hasAnyAiKey()) {
+    console.log('[DailyPlan] No AI API key set or offline mode: using deterministic fallback.');
     return generateFallbackPlan(profile, hourlyAir, undefined, language);
   }
 
@@ -267,12 +268,14 @@ export async function runDailyPlan(
     }
   };
 
-  try {
-    const client = getGeminiClient();
-    const systemInstruction = getSystemInstruction();
+  // 1. Primary: Try Gemini API tool-calling flow if GEMINI_API_KEY is configured
+  if (hasGeminiApiKey()) {
+    try {
+      const client = getGeminiClient();
+      const systemInstruction = getSystemInstruction();
 
-    // Turn 1: Send user request with tools
-    const userPrompt = `Generate a personalized Daily Air Quality Coach Plan for this household profile.
+      // Turn 1: Send user request with tools
+      const userPrompt = `Generate a personalized Daily Air Quality Coach Plan for this household profile.
 Household Profile:
 ${JSON.stringify(profile, null, 2)}
 
@@ -280,103 +283,65 @@ Location: ${profile.location.placeName} (lat: ${profile.location.lat}, lon: ${pr
 Language requested: ${language}.
 First, call the necessary engine tools: rankActions to identify the top 3 interventions, computeBaseline, and bestWindows.`;
 
-    const contents: any[] = [
-      {
-        role: 'user',
-        parts: [{ text: userPrompt }],
-      },
-    ];
+      const contents: any[] = [
+        {
+          role: 'user',
+          parts: [{ text: userPrompt }],
+        },
+      ];
 
-    const turn1Response = await client.models.generateContent({
-      model: MODELS.main,
-      contents,
-      config: {
-        systemInstruction,
-        tools: PLAN_TOOLS as any,
-        temperature: 0.2,
-      },
-    });
-
-    const functionCalls = turn1Response.functionCalls;
-
-    if (functionCalls && functionCalls.length > 0) {
-      // Execute each function call and record responses
-      const functionResponseParts: any[] = [];
-
-      for (const call of functionCalls) {
-        if (!call.name) continue;
-        console.log(`[DailyPlan] Gemini requested tool: ${call.name} with args:`, call.args);
-        const toolResult = executeEngineTool(call.name, (call.args || {}) as Record<string, any>);
-        functionResponseParts.push({
-          functionResponse: {
-            name: call.name,
-            response: { output: toolResult },
-          },
-        });
-      }
-
-      // Add model's tool calls and client's tool responses to history
-      contents.push({
-        role: 'model',
-        parts: turn1Response.candidates?.[0]?.content?.parts || [],
+      const turn1Response = await client.models.generateContent({
+        model: MODELS.main,
+        contents,
+        config: {
+          systemInstruction,
+          tools: PLAN_TOOLS as any,
+          temperature: 0.2,
+        },
       });
 
-      contents.push({
-        role: 'user',
-        parts: [
-          ...functionResponseParts,
-          {
-            text: `Tool results received. Now output the complete, final Plan JSON matching PlanSchema.
+      const functionCalls = turn1Response.functionCalls;
+
+      if (functionCalls && functionCalls.length > 0) {
+        // Execute each function call and record responses
+        const functionResponseParts: any[] = [];
+
+        for (const call of functionCalls) {
+          if (!call.name) continue;
+          console.log(`[DailyPlan] Gemini requested tool: ${call.name} with args:`, call.args);
+          const toolResult = executeEngineTool(call.name, (call.args || {}) as Record<string, any>);
+          functionResponseParts.push({
+            functionResponse: {
+              name: call.name,
+              response: { output: toolResult },
+            },
+          });
+        }
+
+        // Add model's tool calls and client's tool responses to history
+        contents.push({
+          role: 'model',
+          parts: turn1Response.candidates?.[0]?.content?.parts || [],
+        });
+
+        contents.push({
+          role: 'user',
+          parts: [
+            ...functionResponseParts,
+            {
+              text: `Tool results received. Now output the complete, final Plan JSON matching PlanSchema.
 CRITICAL MANDATORY RULES:
 1. Every numeric value must be expressed as a reference token like [[r1.breathe.after]], [[r1.breathe.deltaPct]], or [[r1.give.co2e_g]].
 2. Free text must contain NO digits other than clock times (e.g. 2:00 PM, 14:00) and calendar dates.
 3. If combustion heating (coal, charcoal, wood, gas) is present, include a prominent carbon monoxide warning in safetyNotes and never advise sealing rooms.
 4. Never recommend tight respirators (N95) for infants or children under two.
 5. Return valid JSON only.`,
-          },
-        ],
-      });
-
-      // Turn 2: Request final structured Plan
-      const turn2Response = await client.models.generateContent({
-        model: MODELS.main,
-        contents,
-        config: {
-          systemInstruction,
-          responseMimeType: 'application/json',
-          temperature: 0.1,
-        },
-      });
-
-      const responseText = turn2Response.text || '';
-      let parsedPlan = parseAndValidateJson(responseText);
-
-      // Validate no stray numbers in free text
-      let valResult = validatePlanNoStrayNumbers(parsedPlan);
-
-      if (!valResult.valid) {
-        console.warn(
-          '[DailyPlan] Stray numbers detected in Gemini plan, retrying once with violation feedback:',
-          valResult.violations
-        );
-
-        // Turn 3 (Retry): Send feedback
-        contents.push({
-          role: 'model',
-          parts: [{ text: responseText }],
-        });
-        contents.push({
-          role: 'user',
-          parts: [
-            {
-              text: `Your previous output contained stray numbers in free text:
-${valResult.violations.join('\n')}
-Please regenerate the JSON plan fixing these violations. Use reference tokens [[r1.breathe.after]], [[r1.breathe.deltaPct]] etc. instead of numbers. Free text must contain NO digits.`,
             },
           ],
         });
 
-        const retryResponse = await client.models.generateContent({
+        // Turn 2: Request final structured Plan
+        const turn2Response = await client.models.generateContent({
           model: MODELS.main,
           contents,
           config: {
@@ -386,34 +351,124 @@ Please regenerate the JSON plan fixing these violations. Use reference tokens [[
           },
         });
 
-        parsedPlan = parseAndValidateJson(retryResponse.text || '');
-        valResult = validatePlanNoStrayNumbers(parsedPlan);
+        const responseText = turn2Response.text || '';
+        let parsedPlan = parseAndValidateJson(responseText);
+
+        // Validate no stray numbers in free text
+        let valResult = validatePlanNoStrayNumbers(parsedPlan);
 
         if (!valResult.valid) {
-          console.warn('[DailyPlan] Retry still contained stray numbers; falling back to deterministic plan.');
-          return generateFallbackPlan(profile, airData, Object.values(receiptsLookup), language);
-        }
-      }
+          console.warn(
+            '[DailyPlan] Stray numbers detected in Gemini plan, retrying once with violation feedback:',
+            valResult.violations
+          );
 
-      // Substitute tokens with verified engine receipts
-      const finalPlan = substitutePlanTokens(parsedPlan, receiptsLookup);
-      return finalPlan;
-    } else {
-      // If no tools were called, check if direct output contains valid Plan
-      const directText = turn1Response.text || '';
-      if (directText.includes('{')) {
-        const parsedPlan = parseAndValidateJson(directText);
-        const valResult = validatePlanNoStrayNumbers(parsedPlan);
-        if (valResult.valid) {
+          // Turn 3 (Retry): Send feedback
+          contents.push({
+            role: 'model',
+            parts: [{ text: responseText }],
+          });
+          contents.push({
+            role: 'user',
+            parts: [
+              {
+                text: `Your previous output contained stray numbers in free text:
+${valResult.violations.join('\n')}
+Please regenerate the JSON plan fixing these violations. Use reference tokens [[r1.breathe.after]], [[r1.breathe.deltaPct]] etc. instead of numbers. Free text must contain NO digits.`,
+              },
+            ],
+          });
+
+          const retryResponse = await client.models.generateContent({
+            model: MODELS.main,
+            contents,
+            config: {
+              systemInstruction,
+              responseMimeType: 'application/json',
+              temperature: 0.1,
+            },
+          });
+
+          parsedPlan = parseAndValidateJson(retryResponse.text || '');
+          valResult = validatePlanNoStrayNumbers(parsedPlan);
+
+          if (!valResult.valid) {
+            console.warn('[DailyPlan] Retry still contained stray numbers; cascading to backup AI models.');
+          } else {
+            return substitutePlanTokens(parsedPlan, receiptsLookup);
+          }
+        } else {
           return substitutePlanTokens(parsedPlan, receiptsLookup);
         }
+      } else {
+        const directText = turn1Response.text || '';
+        if (directText.includes('{')) {
+          const parsedPlan = parseAndValidateJson(directText);
+          const valResult = validatePlanNoStrayNumbers(parsedPlan);
+          if (valResult.valid) {
+            return substitutePlanTokens(parsedPlan, receiptsLookup);
+          }
+        }
       }
-      return generateFallbackPlan(profile, airData, Object.values(receiptsLookup), language);
+    } catch (geminiError) {
+      console.warn('[DailyPlan] Gemini flow failed, cascading to backup AI models...', (geminiError as Error)?.message || geminiError);
     }
-  } catch (error) {
-    console.warn('[DailyPlan] Error during Gemini daily plan flow, falling back to deterministic engine plan:', error);
-    return generateFallbackPlan(profile, airData, Object.values(receiptsLookup), language);
   }
+
+  // 2. Backup Cascade: Mistral AI API / NVIDIA AI API (GLM & GLM Fast) / Direct GLM API
+  if (hasAnyAiKey()) {
+    try {
+      console.log('[DailyPlan] Attempting backup AI cascade (Mistral / NVIDIA GLM)...');
+      const ranked = rankActions(profile, airData);
+      for (const item of ranked) {
+        receiptsLookup[item.action.id] = item.receipt;
+      }
+      const hasCombustionHeater = ['coal_charcoal', 'wood', 'gas'].some((h) =>
+        profile.home.heating.includes(h as any)
+      );
+      const indoorSim = computeHourlyIndoor(outdoorList, profile);
+      const windows = bestWindows(outdoorList, indoorSim.hourlyIndoor, {
+        durationH: 2,
+        hasCombustionHeater,
+      });
+
+      const cascadePrompt = `Generate a personalized Daily Air Quality Coach Plan for this household profile.
+Household Profile:
+${JSON.stringify(profile, null, 2)}
+
+Location: ${profile.location.placeName} (lat: ${profile.location.lat}, lon: ${profile.location.lon}).
+Language requested: ${language}.
+Top 3 Pre-Calculated Aerosol Physics Actions:
+${JSON.stringify(
+  ranked.slice(0, 3).map((r) => ({
+    id: r.action.id,
+    title: r.action.title,
+    whoBenefits: r.action.whoBenefits,
+    receipt: r.receipt,
+  })),
+  null,
+  2
+)}
+Best Ventilation Windows:
+${JSON.stringify(windows, null, 2)}
+
+Output the final Plan JSON matching PlanSchema. Every numeric value must be expressed as a reference token like [[r1.breathe.after]], [[r1.breathe.deltaPct]], or [[r1.give.co2e_g]]. Return valid JSON only.`;
+
+      const cascadePlan = await callGemini<Plan>({
+        model: MODELS.main,
+        systemInstruction: getSystemInstruction(),
+        contents: cascadePrompt,
+        responseSchema: PlanSchema,
+        temperature: 0.1,
+      });
+
+      return substitutePlanTokens(cascadePlan, receiptsLookup);
+    } catch (cascadeErr) {
+      console.warn('[DailyPlan] Backup AI cascade failed, falling back to deterministic plan:', (cascadeErr as Error)?.message || cascadeErr);
+    }
+  }
+
+  return generateFallbackPlan(profile, airData, Object.values(receiptsLookup), language);
 }
 
 function parseAndValidateJson(rawText: string): Plan {
