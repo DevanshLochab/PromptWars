@@ -9,6 +9,8 @@ import {
   isDemoModeEnabled,
   setDemoModeEnabled,
   getDefaultDemoProfile,
+  isOnboardingComplete,
+  setOnboardingComplete as setOnboardingCompleteInStore,
 } from './profileStore';
 
 interface ProfileContextType {
@@ -16,9 +18,12 @@ interface ProfileContextType {
   isDemoMode: boolean;
   language: 'en' | 'hi';
   isLoaded: boolean;
+  onboardingComplete: boolean;
+  setOnboardingComplete: (complete: boolean) => void;
   setProfile: (profile: HouseholdProfile) => void;
   updateLanguage: (lang: 'en' | 'hi') => void;
   toggleDemoMode: (enabled?: boolean) => void;
+  setDemoMode: (enabled: boolean) => void;
   resetAllData: () => void;
 }
 
@@ -29,17 +34,25 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [isDemoMode, setIsDemoMode] = useState<boolean>(true);
   const [language, setLanguage] = useState<'en' | 'hi'>('en');
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [onboardingComplete, setOnboardingCompleteState] = useState<boolean>(false);
 
   useEffect(() => {
     const demo = isDemoModeEnabled();
     setIsDemoMode(demo);
     const loaded = getStoredProfile();
     setProfileState(loaded);
+    const complete = isOnboardingComplete();
+    setOnboardingCompleteState(complete);
     if (loaded?.language) {
       setLanguage(loaded.language);
     }
     setIsLoaded(true);
   }, []);
+
+  const setOnboardingComplete = (complete: boolean) => {
+    setOnboardingCompleteState(complete);
+    setOnboardingCompleteInStore(complete);
+  };
 
   const setProfile = (newProfile: HouseholdProfile) => {
     setProfileState(newProfile);
@@ -57,15 +70,19 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const toggleDemoMode = (enabled?: boolean) => {
-    const next = enabled !== undefined ? enabled : !isDemoMode;
-    setIsDemoMode(next);
-    setDemoModeEnabled(next);
-    if (next && !profile) {
+  const setDemoMode = (enabled: boolean) => {
+    setIsDemoMode(enabled);
+    setDemoModeEnabled(enabled);
+    if (enabled && !profile) {
       const demo = getDefaultDemoProfile();
       setProfileState(demo);
       saveStoredProfile(demo);
     }
+  };
+
+  const toggleDemoMode = (enabled?: boolean) => {
+    const next = enabled !== undefined ? enabled : !isDemoMode;
+    setDemoMode(next);
   };
 
   const resetAllData = () => {
@@ -74,6 +91,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     setIsDemoMode(false);
     setProfileState(null);
     setLanguage('en');
+    setOnboardingCompleteState(false);
   };
 
   return (
@@ -83,9 +101,12 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         isDemoMode,
         language,
         isLoaded,
+        onboardingComplete,
+        setOnboardingComplete,
         setProfile,
         updateLanguage,
         toggleDemoMode,
+        setDemoMode,
         resetAllData,
       }}
     >
@@ -101,3 +122,5 @@ export function useProfile() {
   }
   return context;
 }
+
+export const useProfileStore = useProfile;

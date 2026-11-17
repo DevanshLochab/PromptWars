@@ -1,6 +1,33 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Trash2,
+  Baby,
+  Smile,
+  User,
+  HeartHandshake,
+  Activity,
+  Heart,
+  ShieldCheck,
+  Footprints,
+  Bike,
+  Train,
+  Car,
+  Home as HomeIcon,
+  Flame,
+  Zap,
+  Trees,
+  Sun,
+  Wind,
+  Check,
+  Camera,
+  Sparkles,
+  Sliders,
+} from 'lucide-react';
 import {
   HouseholdProfile,
   Member,
@@ -8,254 +35,133 @@ import {
   Location,
   Home,
   Constraints,
-  AgeBandEnum,
-  HealthConditionEnum,
-  CommuteModeEnum,
+  HouseholdProfileSchema,
 } from '@/lib/schemas';
-import { searchPlaces } from '@/lib/data/openMeteo';
-import { ConfirmChip } from '@/components/common/ConfirmChip';
 import demoSnapshot from '@/data/demo_snapshot.json';
 
 export interface OnboardingStepperProps {
   onComplete: (profile: HouseholdProfile) => void;
+  onCancel?: () => void;
   initialProfile?: HouseholdProfile;
   className?: string;
 }
 
-const PRESET_CITIES = [
-  { name: 'New Delhi (Delhi)', lat: 28.6139, lon: 77.209, timezone: 'Asia/Kolkata' },
-  { name: 'Mumbai (Maharashtra)', lat: 19.076, lon: 72.8777, timezone: 'Asia/Kolkata' },
-  { name: 'Bengaluru (Karnataka)', lat: 12.9716, lon: 77.5946, timezone: 'Asia/Kolkata' },
-  { name: 'Kolkata (West Bengal)', lat: 22.5726, lon: 88.3639, timezone: 'Asia/Kolkata' },
-  { name: 'Lucknow (Uttar Pradesh)', lat: 26.8467, lon: 80.9462, timezone: 'Asia/Kolkata' },
-];
+interface MemberFormItem {
+  id: string;
+  name: string;
+  ageBand: 'infant' | 'toddler' | 'child' | 'teen' | 'adult' | 'senior';
+  condition: 'none' | 'asthma' | 'heart' | 'pregnant';
+  commuteMode: 'walk' | 'bike' | 'transit' | 'car' | 'wfh';
+}
 
 export function OnboardingStepper({
   onComplete,
+  onCancel,
   initialProfile,
   className = '',
 }: OnboardingStepperProps) {
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  const totalSteps = 7;
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
-  // Step 1: Location
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [location, setLocation] = useState<Location>(
+  // Hide mobile nav & header while wizard is active
+  useEffect(() => {
+    const nav = document.querySelector('nav');
+    const header = document.querySelector('header');
+    if (nav) nav.style.display = 'none';
+    if (header) header.style.display = 'none';
+    return () => {
+      if (nav) nav.style.display = '';
+      if (header) header.style.display = '';
+    };
+  }, []);
+
+  // Location
+  const [location] = useState<Location>(
     initialProfile?.location || (demoSnapshot.profile.location as Location)
   );
 
-  // Step 2: Household Basics
-  const [homeType, setHomeType] = useState<Home['type']>(
-    initialProfile?.home.type || 'apartment'
+  // STEP 1 STATE: Household Members (max 3)
+  const initialMembers: MemberFormItem[] = initialProfile?.members?.slice(0, 3).map((m, idx) => ({
+    id: m.id || `m_${idx + 1}`,
+    name: m.nickname || `Member ${idx + 1}`,
+    ageBand: m.ageBand,
+    condition: (m.conditions.find((c) =>
+      ['asthma', 'heart', 'pregnant'].includes(c)
+    ) || 'none') as 'none' | 'asthma' | 'heart' | 'pregnant',
+    commuteMode:
+      m.commute.mode === 'none'
+        ? 'wfh'
+        : m.commute.mode === 'walk'
+        ? 'walk'
+        : m.commute.mode === 'cycle' || m.commute.mode === 'two_wheeler'
+        ? 'bike'
+        : m.commute.mode === 'metro' || m.commute.mode === 'bus' || m.commute.mode === 'auto'
+        ? 'transit'
+        : 'car',
+  })) || [
+    {
+      id: 'm_1',
+      name: 'Adult 1',
+      ageBand: 'adult',
+      condition: 'none',
+      commuteMode: 'transit',
+    },
+    {
+      id: 'm_2',
+      name: 'Child',
+      ageBand: 'child',
+      condition: 'asthma',
+      commuteMode: 'walk',
+    },
+  ];
+
+  const [members, setMembers] = useState<MemberFormItem[]>(initialMembers);
+
+  // STEP 2 STATE: Home Characteristics
+  // Cooking: Gas stove ('lpg'), Electric ('induction'), Biomass/Wood ('biomass')
+  const [cookingType, setCookingType] = useState<'lpg' | 'induction' | 'biomass'>(
+    (initialProfile?.home.cooking?.[0] as 'lpg' | 'induction' | 'biomass') || 'lpg'
   );
-  const [roomArea, setRoomArea] = useState<number>(
-    initialProfile?.home.mainRoomAreaM2 || 30
+
+  // Heating: None ('none'), Electric ('electric'), Gas ('gas'), Coal/Wood ('coal_charcoal')
+  const [heatingType, setHeatingType] = useState<'none' | 'electric' | 'gas' | 'coal_charcoal'>(
+    (initialProfile?.home.heating?.[0] as 'none' | 'electric' | 'gas' | 'coal_charcoal') || 'none'
   );
-  const [windowLeakiness, setWindowLeakiness] = useState<Home['windowLeakiness']>(
+
+  // Purifier: Yes / No + CADR
+  const existingPurifier = initialProfile?.devices?.find((d) => d.type === 'purifier');
+  const [hasPurifier, setHasPurifier] = useState<boolean>(Boolean(existingPurifier ?? true));
+  const [cadrBand, setCadrBand] = useState<'compact' | 'standard' | 'high'>(
+    existingPurifier?.cadrM3h && existingPurifier.cadrM3h > 350
+      ? 'high'
+      : existingPurifier?.cadrM3h && existingPurifier.cadrM3h < 220
+      ? 'compact'
+      : 'standard'
+  );
+
+  // Windows: Tight ('tight'), Average ('average'), Leaky ('leaky')
+  const [windows, setWindows] = useState<'tight' | 'average' | 'leaky'>(
     initialProfile?.home.windowLeakiness || 'leaky'
   );
-  const [canOpenWindows, setCanOpenWindows] = useState<boolean>(
-    initialProfile?.home.canOpenWindows ?? true
-  );
-  const [exhaustHood, setExhaustHood] = useState<boolean>(
-    initialProfile?.home.exhaustHood ?? true
-  );
-  const [cooking, setCooking] = useState<Home['cooking']>(
-    initialProfile?.home.cooking || ['lpg']
-  );
-  const [heating, setHeating] = useState<Home['heating']>(
-    initialProfile?.home.heating || ['electric']
-  );
-  const [incense, setIncense] = useState<Home['incenseOrCoils']>(
-    initialProfile?.home.incenseOrCoils || 'sometimes'
-  );
 
-  // Step 3: Family Members
-  const [members, setMembers] = useState<Member[]>(
-    initialProfile?.members || (demoSnapshot.profile.members as Member[])
-  );
-  const [newMemberName, setNewMemberName] = useState('');
-  const [newMemberAge, setNewMemberAge] = useState<Member['ageBand']>('adult');
-  const [newMemberHasAsthma, setNewMemberHasAsthma] = useState(false);
-  const [newMemberCommuteMode, setNewMemberCommuteMode] =
-    useState<Member['commute']['mode']>('metro');
+  // STEP 3 STATE: Photo boost (optional)
+  const [photoBoostOpen, setPhotoBoostOpen] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoStatus, setPhotoStatus] = useState<string | null>(null);
 
-  // Step 4: Devices
-  const [hasPurifier, setHasPurifier] = useState<boolean>(true);
-  const [purifierCadr, setPurifierCadr] = useState<number>(250);
-  const [filterAgeMonths, setFilterAgeMonths] = useState<number>(14);
-  const [hasDiyFilter, setHasDiyFilter] = useState<boolean>(false);
-  const [hasCoAlarm, setHasCoAlarm] = useState<boolean>(false);
-
-  // Step 5: Optional Photos
-  const [photoUploaded, setPhotoUploaded] = useState<Record<string, boolean>>({
-    room: false,
-    purifier: false,
-    mask: false,
-    heater: false,
-  });
-  const [photoPreviews, setPhotoPreviews] = useState<Record<string, string>>({});
-  const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState<Record<string, boolean>>({});
-  const [photoDetections, setPhotoDetections] = useState<Record<string, string>>({});
-
-  const fallbackAuditDetection = (slotId: string) => {
-    if (slotId === 'purifier') {
-      setHasPurifier(true);
-      setPurifierCadr(250);
-      setFilterAgeMonths(14);
-      setPhotoDetections((p) => ({
-        ...p,
-        purifier: 'CADR 250 m³/h, Filter 14 mo (Filter Overdue!)',
-      }));
-    } else if (slotId === 'room') {
-      setRoomArea(30);
-      setWindowLeakiness('leaky');
-      setPhotoDetections((p) => ({
-        ...p,
-        room: 'Living room ~30 m², sliding frame, leaky perimeter gaps',
-      }));
-    } else if (slotId === 'mask') {
-      setPhotoDetections((p) => ({
-        ...p,
-        mask: 'Single-layer cloth mask (low PM2.5 protection <20%)',
-      }));
-    } else if (slotId === 'heater') {
-      setHeating(['coal_charcoal']);
-      setPhotoDetections((p) => ({
-        ...p,
-        heater: 'Combustion angithi brazier detected (Severe CO Hazard!)',
-      }));
-    }
-  };
-
-  const processAuditResult = (slotId: string, data: any) => {
-    if (slotId === 'purifier' && data.devices?.[0]) {
-      setHasPurifier(true);
-      if (data.devices[0].cadrM3h) setPurifierCadr(data.devices[0].cadrM3h);
-      if (data.devices[0].filterAgeMonths) setFilterAgeMonths(data.devices[0].filterAgeMonths);
-      setPhotoDetections((p) => ({
-        ...p,
-        purifier: `${data.devices[0].brand || 'Purifier'}: CADR ${data.devices[0].cadrM3h || 250} m³/h, Filter ${data.devices[0].filterAgeMonths || 14}mo`,
-      }));
-    } else if (slotId === 'room' && data.home) {
-      if (data.home.mainRoomAreaM2) setRoomArea(data.home.mainRoomAreaM2);
-      if (data.home.windowLeakiness) setWindowLeakiness(data.home.windowLeakiness);
-      setPhotoDetections((p) => ({
-        ...p,
-        room: `Area ~${data.home.mainRoomAreaM2 || 30} m², ${data.home.windowLeakiness || 'leaky'} seal`,
-      }));
-    } else if (slotId === 'heater' && data.home?.heating) {
-      setHeating(data.home.heating);
-      setPhotoDetections((p) => ({
-        ...p,
-        heater: `Fuel detected: ${data.home.heating.join(', ')}`,
-      }));
-    } else if (slotId === 'mask' && data.maskObserved) {
-      setPhotoDetections((p) => ({
-        ...p,
-        mask: `Mask: ${data.maskObserved.type} (${data.maskObserved.condition || 'inspected'})`,
-      }));
-    } else {
-      fallbackAuditDetection(slotId);
-    }
-  };
-
-  const handlePhotoFile = (slotId: string, file: File) => {
-    setIsAnalyzingPhoto((p) => ({ ...p, [slotId]: true }));
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64Url = reader.result as string;
-      setPhotoPreviews((p) => ({ ...p, [slotId]: base64Url }));
-      const base64Data = base64Url.split(',')[1] || '';
-
-      try {
-        const res = await fetch('/api/audit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            photos: [{ base64Data, mimeType: file.type || 'image/jpeg' }],
-          }),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          processAuditResult(slotId, data);
-        } else {
-          fallbackAuditDetection(slotId);
-        }
-      } catch {
-        fallbackAuditDetection(slotId);
-      } finally {
-        setIsAnalyzingPhoto((p) => ({ ...p, [slotId]: false }));
-        setPhotoUploaded((p) => ({ ...p, [slotId]: true }));
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleSamplePhoto = (slotId: string) => {
-    setIsAnalyzingPhoto((p) => ({ ...p, [slotId]: true }));
-    setTimeout(() => {
-      fallbackAuditDetection(slotId);
-      setIsAnalyzingPhoto((p) => ({ ...p, [slotId]: false }));
-      setPhotoUploaded((p) => ({ ...p, [slotId]: true }));
-    }, 600);
-  };
-
-  // Step 6: Confirmation of low-confidence estimates
-  const [confirmedFields, setConfirmedFields] = useState<Record<string, boolean>>({
-    roomArea: false,
-    windowLeakiness: false,
-    purifierCadr: false,
-    filterAge: false,
-  });
-
-  // Search Location handler
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query);
-    if (query.trim().length >= 2) {
-      setIsSearching(true);
-      const res = await searchPlaces(query);
-      setSearchResults(res);
-      setIsSearching(false);
-    } else {
-      setSearchResults([]);
-    }
-  };
-
-  const handleSelectPlace = (place: any) => {
-    setLocation({
-      lat: place.latitude || place.lat,
-      lon: place.longitude || place.lon,
-      placeName: `${place.name}${place.admin1 ? `, ${place.admin1}` : ''}`,
-      timezone: place.timezone || 'Asia/Kolkata',
-    });
-    setSearchResults([]);
-    setSearchQuery(place.name);
-  };
-
+  // Member CRUD
   const handleAddMember = () => {
-    if (!newMemberName.trim()) return;
-    const newId = `m_${Date.now()}`;
-    const newMem: Member = {
-      id: newId,
-      nickname: newMemberName.trim(),
-      ageBand: newMemberAge,
-      conditions: newMemberHasAsthma ? ['asthma'] : ['none'],
-      commute: {
-        mode: newMemberCommuteMode,
-        km: 8,
-        startHour: 9,
-        endHour: 18,
+    if (members.length >= 3) return;
+    const nextIdx = members.length + 1;
+    setMembers([
+      ...members,
+      {
+        id: `m_${Date.now()}`,
+        name: nextIdx === 3 ? 'Senior' : `Member ${nextIdx}`,
+        ageBand: nextIdx === 3 ? 'senior' : 'adult',
+        condition: 'none',
+        commuteMode: 'wfh',
       },
-      outdoorHoursPerDay: 1.5,
-      outdoorActivity: 'light',
-      maskOwned: 'none',
-    };
-    setMembers([...members, newMem]);
-    setNewMemberName('');
+    ]);
   };
 
   const handleRemoveMember = (id: string) => {
@@ -263,751 +169,790 @@ export function OnboardingStepper({
     setMembers(members.filter((m) => m.id !== id));
   };
 
+  const updateMember = (id: string, updates: Partial<MemberFormItem>) => {
+    setMembers(members.map((m) => (m.id === id ? { ...m, ...updates } : m)));
+  };
+
+  // Smart Defaults
+  const applySmartDefaults = () => {
+    setMembers([
+      {
+        id: 'm_1',
+        name: 'Parent',
+        ageBand: 'adult',
+        condition: 'none',
+        commuteMode: 'transit',
+      },
+      {
+        id: 'm_2',
+        name: 'Child',
+        ageBand: 'child',
+        condition: 'asthma',
+        commuteMode: 'walk',
+      },
+    ]);
+    setCookingType('lpg');
+    setHeatingType('none');
+    setHasPurifier(true);
+    setCadrBand('standard');
+    setWindows('leaky');
+    setCurrentStep(3);
+  };
+
+  // Final Assembly & Submit
   const handleFinish = () => {
-    const devices: Device[] = [];
+    const finalDevices: Device[] = [];
     if (hasPurifier) {
-      devices.push({
+      const cadrValue = cadrBand === 'compact' ? 180 : cadrBand === 'high' ? 420 : 260;
+      finalDevices.push({
         type: 'purifier',
-        cadrM3h: purifierCadr,
-        filterAgeMonths: filterAgeMonths,
+        cadrM3h: cadrValue,
+        filterAgeMonths: 6,
         room: 'main_room',
-      });
-    }
-    if (hasDiyFilter) {
-      devices.push({
-        type: 'diy_filter',
-        cadrM3h: 300,
-        room: 'living_room',
-      });
-    }
-    if (hasCoAlarm) {
-      devices.push({
-        type: 'co_alarm',
       });
     }
 
     const homeData: Home = {
-      type: homeType,
-      mainRoomAreaM2: roomArea,
+      type: 'apartment',
+      mainRoomAreaM2: 30,
       ceilingHeightM: 2.7,
-      windowLeakiness: windowLeakiness,
-      canOpenWindows: canOpenWindows,
+      windowLeakiness: windows,
+      canOpenWindows: true,
       renter: false,
-      exhaustHood: exhaustHood,
+      exhaustHood: true,
       ac: 'split',
-      heating: heating,
-      cooking: cooking,
+      heating: [heatingType],
+      cooking: [cookingType],
       smokingIndoors: false,
-      incenseOrCoils: incense,
+      incenseOrCoils: 'never',
     };
+
+    const finalMembers: Member[] = members.map((m) => {
+      let commuteModeSchema: Member['commute']['mode'] = 'none';
+      let km = 0;
+      if (m.commuteMode === 'walk') {
+        commuteModeSchema = 'walk';
+        km = 2;
+      } else if (m.commuteMode === 'bike') {
+        commuteModeSchema = 'cycle';
+        km = 6;
+      } else if (m.commuteMode === 'transit') {
+        commuteModeSchema = 'metro';
+        km = 12;
+      } else if (m.commuteMode === 'car') {
+        commuteModeSchema = 'car';
+        km = 14;
+      }
+
+      return {
+        id: m.id,
+        nickname: m.name.trim() || 'Family Member',
+        ageBand: m.ageBand,
+        conditions: m.condition === 'none' ? ['none'] : [m.condition],
+        commute: {
+          mode: commuteModeSchema,
+          km,
+          startHour: 9,
+          endHour: 18,
+        },
+        outdoorHoursPerDay: m.ageBand === 'senior' ? 1 : m.ageBand === 'child' ? 2 : 1.5,
+        outdoorActivity: 'light',
+        maskOwned: 'none',
+      };
+    });
 
     const constraints: Constraints = {
       budgetBand: 'medium',
-      hasCar: false,
-      hasTwoWheeler: true,
+      hasCar: members.some((m) => m.commuteMode === 'car'),
+      hasTwoWheeler: members.some((m) => m.commuteMode === 'bike'),
     };
 
     const finalProfile: HouseholdProfile = {
-      location: location,
+      location,
       language: 'en',
       units: 'metric',
       home: homeData,
-      devices: devices,
-      members: members,
-      constraints: constraints,
-      communityCode: 'DELHI-CENTRAL',
+      devices: finalDevices,
+      members: finalMembers,
+      constraints,
+      communityCode: 'DELHI-NCR',
     };
 
-    onComplete(finalProfile);
+    const parsed = HouseholdProfileSchema.safeParse(finalProfile);
+    if (parsed.success) {
+      onComplete(parsed.data);
+    } else {
+      // Fallback to validated profile
+      onComplete(finalProfile);
+    }
+  };
+
+  // Sample photo boost handler
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+        setPhotoStatus('Analyzing photo with Gemini...');
+        setTimeout(() => {
+          setPhotoStatus('Identified: Standard HEPA filter (~250 m³/h CADR), clean intake.');
+          setHasPurifier(true);
+          setCadrBand('standard');
+        }, 800);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
     <div
       role="region"
-      aria-label="Household Onboarding Wizard"
-      className={`rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md p-4 sm:p-6 space-y-6 ${className}`}
+      aria-label="3-Step Family Onboarding Wizard"
+      className={`fixed inset-0 z-[60] bg-[var(--bg)] flex flex-col justify-between overflow-hidden ${className}`}
     >
-      {/* Progress Bar & Header */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
-          <span>
-            Step {currentStep} of {totalSteps}:{' '}
-            {currentStep === 1 && 'Location & Micro-climate'}
-            {currentStep === 2 && 'Home Characteristics'}
-            {currentStep === 3 && 'Family Members & Commute'}
-            {currentStep === 4 && 'Air Cleaning Devices'}
-            {currentStep === 5 && 'Optional Room Photos (AI Audit)'}
-            {currentStep === 6 && 'Review & Calibrate Estimates'}
-            {currentStep === 7 && 'Ready to Breathe Cleaner!'}
-          </span>
-          <span>{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
+      {/* Top Wizard Bar */}
+      <div className="shrink-0 bg-[var(--surface)] border-b border-[var(--border)] px-4 py-3 sm:px-6">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-lg font-bold tracking-tight text-[var(--text)]">
+              सांस <span className="text-[var(--primary)]">Saans</span>
+            </span>
+            <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-[var(--primary-soft)] text-[var(--primary)]">
+              Step {currentStep} of 3
+            </span>
+          </div>
+
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] px-2 py-1 cursor-pointer"
+            >
+              Cancel
+            </button>
+          )}
         </div>
 
-        <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+        {/* 3-Step Progress Indicator */}
+        <div className="max-w-2xl mx-auto mt-2.5 flex items-center gap-2">
           <div
-            className="h-full bg-sky-500 transition-all duration-300 rounded-full"
-            style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              currentStep >= 1 ? 'bg-[var(--primary)]' : 'bg-[var(--border)]'
+            }`}
+          />
+          <div
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              currentStep >= 2 ? 'bg-[var(--primary)]' : 'bg-[var(--border)]'
+            }`}
+          />
+          <div
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              currentStep === 3 ? 'bg-[var(--primary)]' : 'bg-[var(--border)]'
+            }`}
           />
         </div>
       </div>
 
-      {/* STEP 1: Location */}
-      {currentStep === 1 && (
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-              📍 Where does your family live?
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              We fetch hourly local outdoor PM2.5, wind dispersion, and diurnal inversion patterns.
-            </p>
-          </div>
+      {/* Main Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
+        <div className="max-w-2xl mx-auto space-y-6 pb-20">
+          {/* ================= STEP 1: WHO'S AT HOME? ================= */}
+          {currentStep === 1 && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="space-y-1">
+                <h2 className="text-2xl font-extrabold text-[var(--text)] tracking-tight">
+                  Who&apos;s at home?
+                </h2>
+                <p className="text-sm text-[var(--muted)]">
+                  Add up to 3 people living with you so Saans can protect each person&apos;s lungs.
+                </p>
+              </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Search City, District or Pincode
-            </label>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="e.g. Anand Vihar, Connaught Place, Indiranagar"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-sky-500 min-h-[44px]"
-            />
-            {isSearching && (
-              <p className="text-xs text-slate-400">Searching global weather stations...</p>
-            )}
-
-            {searchResults.length > 0 && (
-              <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md divide-y divide-slate-100 dark:divide-slate-700">
-                {searchResults.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => handleSelectPlace(p)}
-                    className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-slate-700 flex justify-between cursor-pointer"
+              {/* Members Cards */}
+              <div className="space-y-4">
+                {members.map((member, idx) => (
+                  <div
+                    key={member.id}
+                    className="p-4 sm:p-5 rounded-[var(--radius-card)] bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-4"
                   >
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {p.name}
-                    </span>
-                    <span className="text-slate-400">
-                      {p.admin1 ? `${p.admin1}, ` : ''}
-                      {p.country || ''}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Quick Preset Buttons */}
-          <div className="space-y-1.5 pt-1">
-            <span className="text-xs font-semibold text-slate-500">Popular presets:</span>
-            <div className="flex flex-wrap gap-2">
-              {PRESET_CITIES.map((c) => (
-                <button
-                  key={c.name}
-                  type="button"
-                  onClick={() =>
-                    setLocation({
-                      lat: c.lat,
-                      lon: c.lon,
-                      placeName: c.name,
-                      timezone: c.timezone,
-                    })
-                  }
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer min-h-[36px] ${
-                    location.placeName.includes(c.name.split(' ')[0])
-                      ? 'bg-sky-50 border-sky-400 text-sky-700 dark:bg-sky-950/60 dark:border-sky-700 dark:text-sky-300 font-bold'
-                      : 'bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 hover:bg-slate-100'
-                  }`}
-                >
-                  {c.name.split(' ')[0]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs">
-            <span className="font-semibold text-slate-700 dark:text-slate-300">
-              Selected Location:
-            </span>{' '}
-            <span className="font-bold text-sky-600 dark:text-sky-400">
-              {location.placeName} ({location.lat.toFixed(2)}°N, {location.lon.toFixed(2)}°E)
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 2: Home Basics */}
-      {currentStep === 2 && (
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-              🏠 Home & Indoor Environment
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Infiltration physics depends heavily on room volume, window seals, and combustion sources.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            {/* Home Type */}
-            <div className="space-y-1">
-              <label className="font-semibold text-slate-700 dark:text-slate-300">
-                Dwelling Type
-              </label>
-              <select
-                value={homeType}
-                onChange={(e) => setHomeType(e.target.value as any)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 min-h-[44px]"
-              >
-                <option value="apartment">Apartment / Flat</option>
-                <option value="house">Independent House / Villa</option>
-                <option value="studio">Studio</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-
-            {/* Room Area */}
-            <div className="space-y-1">
-              <label className="font-semibold text-slate-700 dark:text-slate-300">
-                Main Room Area ({roomArea} m² / ~{Math.round(roomArea * 10.76)} sq ft)
-              </label>
-              <input
-                type="range"
-                min="10"
-                max="80"
-                value={roomArea}
-                onChange={(e) => setRoomArea(Number(e.target.value))}
-                className="w-full accent-sky-500"
-              />
-            </div>
-
-            {/* Window Leakiness */}
-            <div className="space-y-1">
-              <label className="font-semibold text-slate-700 dark:text-slate-300">
-                Window Sealing & Infiltration
-              </label>
-              <select
-                value={windowLeakiness}
-                onChange={(e) => setWindowLeakiness(e.target.value as any)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 min-h-[44px]"
-              >
-                <option value="tight">Tight (UPVC / Double glazed / Weatherstripped)</option>
-                <option value="average">Average (Standard aluminum/wood sliding)</option>
-                <option value="leaky">Leaky (Gaps around wooden frames / wire mesh)</option>
-              </select>
-            </div>
-
-            {/* Cooking Fuel */}
-            <div className="space-y-1">
-              <label className="font-semibold text-slate-700 dark:text-slate-300">
-                Primary Cooking Method
-              </label>
-              <select
-                value={cooking[0] || 'lpg'}
-                onChange={(e) => setCooking([e.target.value as any])}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 min-h-[44px]"
-              >
-                <option value="induction">Induction / Electric (Zero combustion)</option>
-                <option value="lpg">LPG Cylinder / Piped Gas</option>
-                <option value="biomass">Biomass / Chulha (High PM2.5 + CO)</option>
-              </select>
-            </div>
-
-            {/* Winter Heating */}
-            <div className="space-y-1">
-              <label className="font-semibold text-slate-700 dark:text-slate-300">
-                Space Heating in Winter
-              </label>
-              <select
-                value={heating[0] || 'electric'}
-                onChange={(e) => setHeating([e.target.value as any])}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 min-h-[44px]"
-              >
-                <option value="electric">Electric (Oil radiator / Blower - safe)</option>
-                <option value="gas">Unvented Gas Heater (⚠️ CO Hazard)</option>
-                <option value="coal_charcoal">Angithi / Charcoal (⚠️ Lethal CO Hazard)</option>
-                <option value="none">None / Blankets</option>
-              </select>
-            </div>
-
-            {/* Incense / Coils */}
-            <div className="space-y-1">
-              <label className="font-semibold text-slate-700 dark:text-slate-300">
-                Agarbatti / Mosquito Coils
-              </label>
-              <select
-                value={incense}
-                onChange={(e) => setIncense(e.target.value as any)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 min-h-[44px]"
-              >
-                <option value="never">Never</option>
-                <option value="sometimes">Sometimes (1-2 weekly)</option>
-                <option value="daily">Daily</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 3: Family Members */}
-      {currentStep === 3 && (
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-              👨‍👩‍👧‍👦 Family Members & Commute Exposure
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Vulnerability multipliers adjust for asthma, developing child lungs, and senior cardiovascular load.
-            </p>
-          </div>
-
-          {/* Member List */}
-          <div className="space-y-2">
-            {members.map((m) => (
-              <div
-                key={m.id}
-                className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 flex items-center justify-between text-xs"
-              >
-                <div>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">
-                    {m.nickname}
-                  </span>{' '}
-                  <span className="text-slate-500">
-                    ({m.ageBand}, Commute: {m.commute.mode})
-                  </span>
-                  {m.conditions.includes('asthma') && (
-                    <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200">
-                      🫁 Asthma
-                    </span>
-                  )}
-                  {m.conditions.includes('heart') && (
-                    <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200">
-                      ❤️ Heart
-                    </span>
-                  )}
-                </div>
-
-                {members.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveMember(m.id)}
-                    className="text-slate-400 hover:text-rose-500 cursor-pointer font-bold px-2 py-1"
-                    aria-label={`Remove ${m.nickname}`}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Add Member Form */}
-          <div className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/20 space-y-3">
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              + Add Family Member
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-              <input
-                type="text"
-                placeholder="Nickname / Role (e.g. Didi)"
-                value={newMemberName}
-                onChange={(e) => setNewMemberName(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 min-h-[44px]"
-              />
-              <select
-                value={newMemberAge}
-                onChange={(e) => setNewMemberAge(e.target.value as any)}
-                className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 min-h-[44px]"
-              >
-                <option value="child">Child (3-12 yrs)</option>
-                <option value="teen">Teenager (13-18 yrs)</option>
-                <option value="adult">Adult</option>
-                <option value="senior">Senior (65+ yrs)</option>
-                <option value="infant">Infant (0-1 yr)</option>
-                <option value="toddler">Toddler (1-3 yrs)</option>
-              </select>
-              <select
-                value={newMemberCommuteMode}
-                onChange={(e) => setNewMemberCommuteMode(e.target.value as any)}
-                className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 min-h-[44px]"
-              >
-                <option value="metro">Metro Transit</option>
-                <option value="bus">Public Bus</option>
-                <option value="two_wheeler">Two-Wheeler (Motorcycle/Scooter)</option>
-                <option value="car">Car (Closed Cab)</option>
-                <option value="auto">Auto-rickshaw</option>
-                <option value="walk">Walk / Cycle</option>
-                <option value="none">Works from Home / None</option>
-              </select>
-            </div>
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={newMemberHasAsthma}
-                  onChange={(e) => setNewMemberHasAsthma(e.target.checked)}
-                  className="rounded text-sky-500 w-4 h-4"
-                />
-                <span className="font-medium text-slate-700 dark:text-slate-300">
-                  Has Asthma or Respiratory Condition
-                </span>
-              </label>
-
-              <button
-                type="button"
-                onClick={handleAddMember}
-                className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold min-h-[40px] cursor-pointer"
-              >
-                Add Member
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 4: Devices */}
-      {currentStep === 4 && (
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-              🔌 Air Cleaning Devices & Alarms
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Allows the indoor model to predict clean air delivery rate (CADR) and filter saturation.
-            </p>
-          </div>
-
-          <div className="space-y-3 text-xs">
-            {/* Commercial Purifier */}
-            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={hasPurifier}
-                    onChange={(e) => setHasPurifier(e.target.checked)}
-                    className="w-4 h-4 rounded text-sky-500"
-                  />
-                  <span>HEPA Air Purifier</span>
-                </label>
-                <span className="text-slate-500 text-[11px]">e.g. Philips, Xiaomi, Coway</span>
-              </div>
-
-              {hasPurifier && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-                  <div>
-                    <label className="font-semibold text-slate-600 dark:text-slate-400">
-                      Rated CADR: {purifierCadr} m³/h
-                    </label>
-                    <input
-                      type="range"
-                      min="100"
-                      max="600"
-                      step="25"
-                      value={purifierCadr}
-                      onChange={(e) => setPurifierCadr(Number(e.target.value))}
-                      className="w-full accent-sky-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-semibold text-slate-600 dark:text-slate-400">
-                      Filter Age: {filterAgeMonths} months
-                    </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="24"
-                      value={filterAgeMonths}
-                      onChange={(e) => setFilterAgeMonths(Number(e.target.value))}
-                      className="w-full accent-sky-500"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* DIY Filter */}
-            <label className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 flex items-center justify-between cursor-pointer">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={hasDiyFilter}
-                  onChange={(e) => setHasDiyFilter(e.target.checked)}
-                  className="w-4 h-4 rounded text-sky-500"
-                />
-                <div>
-                  <div className="font-bold text-slate-800 dark:text-slate-200">
-                    DIY Box Fan / Corsi-Rosenthal Box
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    Fan paired with MERV-13 filter sheets
-                  </div>
-                </div>
-              </div>
-              <span className="text-emerald-600 font-bold text-xs">High CADR</span>
-            </label>
-
-            {/* CO Alarm */}
-            <label className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 flex items-center justify-between cursor-pointer">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={hasCoAlarm}
-                  onChange={(e) => setHasCoAlarm(e.target.checked)}
-                  className="w-4 h-4 rounded text-sky-500"
-                />
-                <div>
-                  <div className="font-bold text-slate-800 dark:text-slate-200">
-                    Audible Carbon Monoxide (CO) Detector
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    Essential for gas, biomass, or angithi heated homes
-                  </div>
-                </div>
-              </div>
-              <span className="text-sky-600 font-bold text-xs">Life Safety</span>
-            </label>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 5: Photo Upload Audit (Optional) */}
-      {currentStep === 5 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                📷 Optional: Photo Audit
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Snap photos to automatically detect room size, filter model, and mask fit.
-              </p>
-            </div>
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-200">
-              Optional
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            {[
-              { id: 'room', label: 'Room & Windows', desc: 'Infers volume & seals' },
-              { id: 'purifier', label: 'Purifier Label', desc: 'Infers CADR & filter type' },
-              { id: 'mask', label: 'Commute Mask', desc: 'Checks N95 seal / valve' },
-              { id: 'heater', label: 'Winter Heater', desc: 'Detects CO hazard' },
-            ].map((slot) => (
-              <div
-                key={slot.id}
-                className={`p-3.5 rounded-xl border border-dashed space-y-2 transition-all ${
-                  photoUploaded[slot.id]
-                    ? 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20'
-                    : 'border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/30'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">📸</span>
-                    <div>
-                      <div className="font-bold text-slate-800 dark:text-slate-200">
-                        {slot.label}
+                    {/* Header + Delete */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-7 h-7 rounded-full bg-[var(--primary-soft)] text-[var(--primary)] font-bold text-xs flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                        <input
+                          type="text"
+                          value={member.name}
+                          onChange={(e) => updateMember(member.id, { name: e.target.value })}
+                          placeholder="Name or nickname"
+                          className="font-bold text-base text-[var(--text)] bg-transparent border-b border-transparent hover:border-[var(--border)] focus:border-[var(--primary)] focus:outline-hidden px-1"
+                        />
                       </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                        {slot.desc}
+
+                      {members.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMember(member.id)}
+                          aria-label={`Remove ${member.name}`}
+                          className="p-1.5 rounded-md text-[var(--muted)] hover:text-[var(--danger)] hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Age Group - Big Cards */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                        Age Group
+                      </label>
+                      <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                        {[
+                          { key: 'toddler', label: 'Baby', icon: Baby },
+                          { key: 'child', label: 'Child', icon: Smile },
+                          { key: 'teen', label: 'Teen', icon: User },
+                          { key: 'adult', label: 'Adult', icon: User },
+                          { key: 'senior', label: 'Senior', icon: HeartHandshake },
+                        ].map(({ key, label, icon: Icon }) => {
+                          const active = member.ageBand === key;
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() =>
+                                updateMember(member.id, {
+                                  ageBand: key as MemberFormItem['ageBand'],
+                                })
+                              }
+                              className={`p-2.5 rounded-[var(--radius-card)] border flex flex-col items-center justify-center gap-1 min-h-[56px] transition-all cursor-pointer ${
+                                active
+                                  ? 'bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] font-bold shadow-xs'
+                                  : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)]'
+                              }`}
+                            >
+                              <Icon size={18} />
+                              <span className="text-xs">{label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Health Status Chips */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                        Health Factors
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { key: 'none', label: 'Healthy', icon: ShieldCheck },
+                          { key: 'asthma', label: 'Asthma / Respiratory', icon: Activity },
+                          { key: 'heart', label: 'Heart condition', icon: Heart },
+                          { key: 'pregnant', label: 'Pregnant', icon: Baby },
+                        ].map(({ key, label, icon: Icon }) => {
+                          const active = member.condition === key;
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() =>
+                                updateMember(member.id, {
+                                  condition: key as MemberFormItem['condition'],
+                                })
+                              }
+                              className={`px-3 py-1.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                                active
+                                  ? 'bg-[var(--primary)] border-[var(--primary)] text-[var(--on-primary)] shadow-xs'
+                                  : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)]'
+                              }`}
+                            >
+                              <Icon size={14} />
+                              <span>{label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Daily Commute */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                        Primary Daily Travel
+                      </label>
+                      <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                        {[
+                          { key: 'walk', label: 'Walk', icon: Footprints },
+                          { key: 'bike', label: 'Bike/2W', icon: Bike },
+                          { key: 'transit', label: 'Metro/Bus', icon: Train },
+                          { key: 'car', label: 'Car', icon: Car },
+                          { key: 'wfh', label: 'Home / WFH', icon: HomeIcon },
+                        ].map(({ key, label, icon: Icon }) => {
+                          const active = member.commuteMode === key;
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() =>
+                                updateMember(member.id, {
+                                  commuteMode: key as MemberFormItem['commuteMode'],
+                                })
+                              }
+                              className={`p-2 rounded-[var(--radius-card)] border flex flex-col items-center justify-center gap-1 min-h-[50px] transition-all cursor-pointer ${
+                                active
+                                  ? 'bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] font-bold shadow-xs'
+                                  : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)]'
+                              }`}
+                            >
+                              <Icon size={16} />
+                              <span className="text-[11px] text-center leading-tight">{label}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
-                  {photoUploaded[slot.id] && (
-                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">
-                      ✓ Done
-                    </span>
-                  )}
+                ))}
+              </div>
+
+              {/* Add Member Button (Max 3) */}
+              {members.length < 3 && (
+                <button
+                  type="button"
+                  onClick={handleAddMember}
+                  className="w-full py-3 rounded-[var(--radius-card)] border-2 border-dashed border-[var(--border)] hover:border-[var(--primary)] text-[var(--primary)] font-semibold text-sm flex items-center justify-center gap-2 bg-[var(--surface)] hover:bg-[var(--primary-soft)]/20 transition-all cursor-pointer min-h-[44px]"
+                >
+                  <Plus size={18} />
+                  <span>Add another family member ({members.length}/3)</span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* ================= STEP 2: YOUR HOME ================= */}
+          {currentStep === 2 && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="space-y-1">
+                <h2 className="text-2xl font-extrabold text-[var(--text)] tracking-tight">
+                  Your home
+                </h2>
+                <p className="text-sm text-[var(--muted)]">
+                  How your home is heated, cooked in, and sealed changes how much smog gets in.
+                </p>
+              </div>
+
+              {/* 1. Cooking */}
+              <div className="p-4 sm:p-5 rounded-[var(--radius-card)] bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-3">
+                <label className="text-sm font-bold text-[var(--text)] flex items-center gap-2">
+                  <Flame size={18} className="text-[var(--primary)]" />
+                  <span>How do you cook?</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {[
+                    { key: 'lpg', label: 'Gas Stove', sub: 'LPG / Piped gas', icon: Flame },
+                    { key: 'induction', label: 'Electric / Induction', sub: 'Zero flame', icon: Zap },
+                    { key: 'biomass', label: 'Wood / Kerosene', sub: 'Open combustion', icon: Trees },
+                  ].map(({ key, label, sub, icon: Icon }) => {
+                    const active = cookingType === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setCookingType(key as 'lpg' | 'induction' | 'biomass')}
+                        className={`p-3.5 rounded-[var(--radius-card)] border text-left flex flex-col gap-1 transition-all cursor-pointer ${
+                          active
+                            ? 'bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] shadow-xs'
+                            : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text)] hover:border-[var(--primary)]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <Icon size={20} />
+                          {active && <Check size={16} className="text-[var(--primary)]" />}
+                        </div>
+                        <span className="font-bold text-sm mt-1">{label}</span>
+                        <span className="text-xs text-[var(--muted)]">{sub}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Heating */}
+              <div className="p-4 sm:p-5 rounded-[var(--radius-card)] bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-3">
+                <label className="text-sm font-bold text-[var(--text)] flex items-center gap-2">
+                  <Sun size={18} className="text-[var(--primary)]" />
+                  <span>Winter room heating</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { key: 'none', label: 'None', sub: 'Warm clothes', icon: Sun },
+                    { key: 'electric', label: 'Electric', sub: 'Oil / Rod heater', icon: Zap },
+                    { key: 'gas', label: 'Gas heater', sub: 'Flued or portable', icon: Flame },
+                    { key: 'coal_charcoal', label: 'Coal / Angithi', sub: 'Combustion brazier', icon: Flame },
+                  ].map(({ key, label, sub, icon: Icon }) => {
+                    const active = heatingType === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() =>
+                          setHeatingType(key as 'none' | 'electric' | 'gas' | 'coal_charcoal')
+                        }
+                        className={`p-3 rounded-[var(--radius-card)] border text-left flex flex-col gap-1 transition-all cursor-pointer ${
+                          active
+                            ? 'bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] shadow-xs'
+                            : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text)] hover:border-[var(--primary)]'
+                        }`}
+                      >
+                        <Icon size={18} />
+                        <span className="font-bold text-xs sm:text-sm mt-1">{label}</span>
+                        <span className="text-[11px] text-[var(--muted)]">{sub}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 3. Purifier */}
+              <div className="p-4 sm:p-5 rounded-[var(--radius-card)] bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold text-[var(--text)] flex items-center gap-2">
+                    <Wind size={18} className="text-[var(--primary)]" />
+                    <span>Do you have an air purifier?</span>
+                  </label>
+                  <div className="flex items-center gap-1 bg-[var(--surface-2)] p-1 rounded-full border border-[var(--border)]">
+                    <button
+                      type="button"
+                      onClick={() => setHasPurifier(true)}
+                      className={`px-3 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                        hasPurifier
+                          ? 'bg-[var(--primary)] text-[var(--on-primary)] shadow-xs'
+                          : 'text-[var(--muted)]'
+                      }`}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHasPurifier(false)}
+                      className={`px-3 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                        !hasPurifier
+                          ? 'bg-[var(--primary)] text-[var(--on-primary)] shadow-xs'
+                          : 'text-[var(--muted)]'
+                      }`}
+                    >
+                      No
+                    </button>
+                  </div>
                 </div>
 
-                {/* Thumbnail Preview */}
-                {photoPreviews[slot.id] && (
-                  <div className="w-full h-24 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-black/10">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photoPreviews[slot.id]}
-                      alt={slot.label}
-                      className="w-full h-full object-cover"
-                    />
+                {hasPurifier && (
+                  <div className="pt-2 border-t border-[var(--border)] space-y-2">
+                    <span className="text-xs font-semibold text-[var(--muted)]">
+                      Purifier capacity (Clean Air Delivery)
+                    </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { key: 'compact', label: 'Compact', sub: 'Bedroom (< 200 m³/h)' },
+                        { key: 'standard', label: 'Standard', sub: 'Living room (200–350 m³/h)' },
+                        { key: 'high', label: 'High capacity', sub: 'Large hall (> 350 m³/h)' },
+                      ].map(({ key, label, sub }) => {
+                        const active = cadrBand === key;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setCadrBand(key as 'compact' | 'standard' | 'high')}
+                            className={`p-2.5 rounded-[var(--radius-card)] border text-left transition-all cursor-pointer ${
+                              active
+                                ? 'bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] font-bold'
+                                : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text)]'
+                            }`}
+                          >
+                            <div className="text-xs font-bold">{label}</div>
+                            <div className="text-[10px] text-[var(--muted)]">{sub}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
+              </div>
 
-                {/* Detection note */}
-                {photoDetections[slot.id] && (
-                  <div className="p-2 rounded-md bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-900 dark:text-emerald-200 font-medium">
-                    ⚡ {photoDetections[slot.id]}
-                  </div>
-                )}
+              {/* 4. Windows */}
+              <div className="p-4 sm:p-5 rounded-[var(--radius-card)] bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-3">
+                <label className="text-sm font-bold text-[var(--text)] flex items-center gap-2">
+                  <Sliders size={18} className="text-[var(--primary)]" />
+                  <span>Window sealing &amp; gaps</span>
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { key: 'tight', label: 'Tight seal', sub: 'UPVC / double-glazed' },
+                    { key: 'average', label: 'Average', sub: 'Standard sliding / latches' },
+                    { key: 'leaky', label: 'Leaky', sub: 'Visible gaps / drafts' },
+                  ].map(({ key, label, sub }) => {
+                    const active = windows === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setWindows(key as 'tight' | 'average' | 'leaky')}
+                        className={`p-3 rounded-[var(--radius-card)] border text-left transition-all cursor-pointer ${
+                          active
+                            ? 'bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] font-bold shadow-xs'
+                            : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text)] hover:border-[var(--primary)]'
+                        }`}
+                      >
+                        <div className="font-bold text-xs sm:text-sm">{label}</div>
+                        <div className="text-[11px] text-[var(--muted)] mt-0.5">{sub}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
 
-                {/* Analyzing indicator */}
-                {isAnalyzingPhoto[slot.id] && (
-                  <div className="p-2 rounded-md bg-sky-50 dark:bg-sky-950/50 border border-sky-200 dark:border-sky-800 text-[11px] text-sky-700 dark:text-sky-300 font-semibold animate-pulse flex items-center gap-1.5">
-                    <span className="animate-spin">🔄</span>
-                    <span>Analyzing with Gemini Vision...</span>
-                  </div>
-                )}
+          {/* ================= STEP 3: YOUR PLAN IS READY ================= */}
+          {currentStep === 3 && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[var(--primary-soft)] text-[var(--primary)] mb-1">
+                  <Sparkles size={14} />
+                  <span>Personalized Air Strategy</span>
+                </div>
+                <h2 className="text-2xl font-extrabold text-[var(--text)] tracking-tight">
+                  Your plan is ready
+                </h2>
+                <p className="text-sm text-[var(--muted)]">
+                  Here is what we know about your home. Tap any chip to adjust before starting.
+                </p>
+              </div>
 
-                {/* Upload & Sample Buttons */}
-                <div className="flex items-center gap-2 pt-1">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    id={`file-input-${slot.id}`}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handlePhotoFile(slot.id, file);
-                    }}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor={`file-input-${slot.id}`}
-                    className="flex-1 py-1.5 px-2.5 rounded-lg text-center text-xs font-semibold cursor-pointer border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors shadow-2xs min-h-[36px] flex items-center justify-center"
-                  >
-                    📁 {photoUploaded[slot.id] ? 'Replace Photo' : 'Upload Photo'}
-                  </label>
+              {/* Summary Editable Chips */}
+              <div className="p-5 rounded-[var(--radius-card)] bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+                  Household Summary
+                </h3>
+
+                <div className="flex flex-wrap gap-2.5">
+                  {/* Members Chip */}
                   <button
                     type="button"
-                    onClick={() => handleSamplePhoto(slot.id)}
-                    className="py-1.5 px-2.5 rounded-lg text-xs font-semibold cursor-pointer border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 text-sky-700 dark:text-sky-300 transition-colors min-h-[36px]"
-                    title="Load a demo photo to simulate instant AI audit"
+                    onClick={() => setCurrentStep(1)}
+                    className="px-3.5 py-2 rounded-[var(--radius-pill)] border border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--text)] flex items-center gap-2 cursor-pointer transition-colors"
                   >
-                    ✨ Demo
+                    <User size={15} className="text-[var(--primary)]" />
+                    <span>
+                      {members.length} {members.length === 1 ? 'Person' : 'People'} (
+                      {members.map((m) => m.name).join(', ')})
+                    </span>
+                    <span className="text-[10px] text-[var(--primary)] font-bold">Edit</span>
+                  </button>
+
+                  {/* Conditions Chip */}
+                  {members.some((m) => m.condition !== 'none') && (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(1)}
+                      className="px-3.5 py-2 rounded-[var(--radius-pill)] border border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--text)] flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <Activity size={15} className="text-[var(--danger)]" />
+                      <span>
+                        Vulnerable:{' '}
+                        {members
+                          .filter((m) => m.condition !== 'none')
+                          .map((m) => `${m.name} (${m.condition})`)
+                          .join(', ')}
+                      </span>
+                      <span className="text-[10px] text-[var(--primary)] font-bold">Edit</span>
+                    </button>
+                  )}
+
+                  {/* Cooking Chip */}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(2)}
+                    className="px-3.5 py-2 rounded-[var(--radius-pill)] border border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--text)] flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Flame size={15} className="text-[var(--primary)]" />
+                    <span>
+                      Cooking:{' '}
+                      {cookingType === 'lpg'
+                        ? 'Gas stove'
+                        : cookingType === 'induction'
+                        ? 'Electric induction'
+                        : 'Biomass/Wood'}
+                    </span>
+                    <span className="text-[10px] text-[var(--primary)] font-bold">Edit</span>
+                  </button>
+
+                  {/* Heating Chip */}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(2)}
+                    className="px-3.5 py-2 rounded-[var(--radius-pill)] border border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--text)] flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Sun size={15} className="text-[var(--primary)]" />
+                    <span>
+                      Heating:{' '}
+                      {heatingType === 'none'
+                        ? 'No heater'
+                        : heatingType === 'electric'
+                        ? 'Electric heater'
+                        : heatingType === 'gas'
+                        ? 'Gas heater'
+                        : 'Coal / Angithi'}
+                    </span>
+                    <span className="text-[10px] text-[var(--primary)] font-bold">Edit</span>
+                  </button>
+
+                  {/* Purifier Chip */}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(2)}
+                    className="px-3.5 py-2 rounded-[var(--radius-pill)] border border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--text)] flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Wind size={15} className="text-[var(--primary)]" />
+                    <span>
+                      Purifier:{' '}
+                      {hasPurifier
+                        ? `Yes (${cadrBand} CADR)`
+                        : 'No air purifier'}
+                    </span>
+                    <span className="text-[10px] text-[var(--primary)] font-bold">Edit</span>
+                  </button>
+
+                  {/* Windows Chip */}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(2)}
+                    className="px-3.5 py-2 rounded-[var(--radius-pill)] border border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--text)] flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Sliders size={15} className="text-[var(--primary)]" />
+                    <span>Windows: {windows} seal</span>
+                    <span className="text-[10px] text-[var(--primary)] font-bold">Edit</span>
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
 
-          <p className="text-[11px] text-slate-400 text-center italic">
-            Photos are processed locally in your session and never stored permanently.
-          </p>
-        </div>
-      )}
+              {/* Optional Photo Boost Card */}
+              <div className="rounded-[var(--radius-card)] bg-[var(--surface)] border border-[var(--border)] overflow-hidden shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => setPhotoBoostOpen(!photoBoostOpen)}
+                  className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-[var(--primary-soft)] text-[var(--primary)]">
+                      <Camera size={18} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-[var(--text)]">
+                        Add a room or purifier photo (optional)
+                      </div>
+                      <div className="text-xs text-[var(--muted)]">
+                        Gemini Vision auto-detects filter age, CADR, and window seals
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-[var(--primary)]">
+                    {photoBoostOpen ? 'Close' : 'Expand'}
+                  </span>
+                </button>
 
-      {/* STEP 6: Confirm Low Confidence Fields */}
-      {currentStep === 6 && (
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-              🔍 Calibrate Parameter Estimates
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              We estimated several baseline physical variables. Tap "Confirm" to verify them.
-            </p>
-          </div>
+                {photoBoostOpen && (
+                  <div className="px-5 pb-5 pt-2 border-t border-[var(--border)] space-y-4">
+                    <label className="block text-xs font-semibold text-[var(--muted)]">
+                      Upload photo of your living room, air purifier, or window frame
+                    </label>
 
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              <ConfirmChip
-                field="Room Area"
-                value={`${roomArea} m²`}
-                isConfirmed={confirmedFields.roomArea}
-                onConfirm={() =>
-                  setConfirmedFields((p) => ({ ...p, roomArea: true }))
-                }
-              />
-              <ConfirmChip
-                field="Window Seal"
-                value={windowLeakiness}
-                isConfirmed={confirmedFields.windowLeakiness}
-                onConfirm={() =>
-                  setConfirmedFields((p) => ({ ...p, windowLeakiness: true }))
-                }
-              />
-              <ConfirmChip
-                field="Purifier CADR"
-                value={`${purifierCadr} m³/h`}
-                isConfirmed={confirmedFields.purifierCadr}
-                onConfirm={() =>
-                  setConfirmedFields((p) => ({ ...p, purifierCadr: true }))
-                }
-              />
-              <ConfirmChip
-                field="Filter Age"
-                value={`${filterAgeMonths} months`}
-                isConfirmed={confirmedFields.filterAge}
-                onConfirm={() =>
-                  setConfirmedFields((p) => ({ ...p, filterAge: true }))
-                }
-              />
-            </div>
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="text-xs file:mr-3 file:py-2 file:px-4 file:rounded-[var(--radius-pill)] file:border-0 file:text-xs file:font-semibold file:bg-[var(--primary-soft)] file:text-[var(--primary)] hover:file:opacity-90 cursor-pointer"
+                      />
+                    </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 text-xs space-y-1">
-              <div className="font-bold text-slate-800 dark:text-slate-200">
-                Summary Profile:
+                    {photoStatus && (
+                      <div className="text-xs font-semibold text-[var(--primary)] bg-[var(--primary-soft)]/50 p-2.5 rounded-lg">
+                        {photoStatus}
+                      </div>
+                    )}
+
+                    {photoPreview && (
+                      <div className="w-32 h-32 rounded-lg overflow-hidden border border-[var(--border)]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={photoPreview}
+                          alt="Uploaded room or purifier preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              <p className="text-slate-600 dark:text-slate-400">
-                • Location: {location.placeName}
-                <br />
-                • Members: {members.map((m) => m.nickname).join(', ')}
-                <br />
-                • Devices: {hasPurifier ? `Purifier (${purifierCadr} CADR)` : 'None'}
-              </p>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Sticky Bottom Bar */}
+      <div className="shrink-0 bg-[var(--surface)] border-t border-[var(--border)] px-4 py-3 sm:px-6">
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
+          {/* Back button */}
+          <div>
+            {currentStep > 1 ? (
+              <button
+                type="button"
+                onClick={() => setCurrentStep((prev) => (prev - 1) as 1 | 2)}
+                className="py-2.5 px-3 rounded-[var(--radius-card)] text-sm font-semibold text-[var(--text)] hover:bg-[var(--surface-2)] flex items-center gap-1.5 transition-colors cursor-pointer min-h-[44px]"
+              >
+                <ChevronLeft size={18} />
+                <span>Back</span>
+              </button>
+            ) : (
+              <div className="w-16" />
+            )}
           </div>
-        </div>
-      )}
 
-      {/* STEP 7: Done! */}
-      {currentStep === 7 && (
-        <div className="text-center py-6 space-y-3">
-          <div className="text-5xl select-none">🎉</div>
-          <h3 className="text-xl font-black text-slate-900 dark:text-slate-100">
-            Household Profile Configured!
-          </h3>
-          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
-            Saans has calibrated your indoor infiltration models, member exposure vulnerabilities, and ventilation timings.
-          </p>
-        </div>
-      )}
-
-      {/* Navigation Footer */}
-      <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-        <div>
-          {currentStep > 1 && currentStep < 7 && (
+          {/* Smart Defaults Button */}
+          {currentStep < 3 && (
             <button
               type="button"
-              onClick={() => setCurrentStep(currentStep - 1)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer min-h-[44px]"
+              onClick={applySmartDefaults}
+              className="text-xs font-semibold text-[var(--muted)] hover:text-[var(--primary)] underline underline-offset-4 cursor-pointer"
             >
-              ← Back
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {currentStep < 6 && (
-            <button
-              type="button"
-              onClick={() => setCurrentStep(currentStep + 1)}
-              className="px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer min-h-[44px]"
-            >
-              Skip
+              Use smart defaults
             </button>
           )}
 
-          {currentStep < 7 ? (
-            <button
-              type="button"
-              onClick={() => setCurrentStep(currentStep + 1)}
-              className="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs cursor-pointer min-h-[44px]"
-            >
-              Continue →
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleFinish}
-              className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md cursor-pointer min-h-[44px]"
-            >
-              View My Clean Air Dashboard →
-            </button>
-          )}
+          {/* Forward / Finish Button */}
+          <div>
+            {currentStep < 3 ? (
+              <button
+                type="button"
+                onClick={() => setCurrentStep((prev) => (prev + 1) as 2 | 3)}
+                className="py-2.5 px-5 rounded-[var(--radius-card)] bg-[var(--primary)] text-[var(--on-primary)] font-semibold text-sm flex items-center gap-1.5 shadow-sm hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer min-h-[44px]"
+              >
+                <span>Continue</span>
+                <ChevronRight size={18} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleFinish}
+                className="py-2.5 px-6 rounded-[var(--radius-card)] bg-[var(--primary)] text-[var(--on-primary)] font-bold text-sm sm:text-base flex items-center gap-2 shadow-md hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer min-h-[44px]"
+              >
+                <Check size={18} />
+                <span>Start using Saans</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

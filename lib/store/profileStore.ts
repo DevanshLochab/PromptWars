@@ -3,6 +3,25 @@ import demoSnapshot from '@/data/demo_snapshot.json';
 
 const PROFILE_STORAGE_KEY = 'saans_household_profile_v1';
 const DEMO_MODE_STORAGE_KEY = 'saans_demo_mode_active';
+const ONBOARDING_COMPLETE_KEY = 'saans_onboarding_complete_v1';
+
+export function isOnboardingComplete(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  const stored = localStorage.getItem(ONBOARDING_COMPLETE_KEY);
+  if (stored !== null) {
+    return stored === 'true';
+  }
+  const profileRaw = localStorage.getItem(PROFILE_STORAGE_KEY);
+  return Boolean(profileRaw);
+}
+
+export function setOnboardingComplete(completed: boolean): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(ONBOARDING_COMPLETE_KEY, completed ? 'true' : 'false');
+  window.dispatchEvent(new Event('saans_profile_updated'));
+}
 
 export function isDemoModeEnabled(): boolean {
   if (typeof window === 'undefined') {
@@ -63,4 +82,7 @@ export function saveStoredProfile(profile: HouseholdProfile): void {
 export function clearStoredProfile(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(PROFILE_STORAGE_KEY);
+  localStorage.removeItem(ONBOARDING_COMPLETE_KEY);
 }
+
+export { useProfileStore } from './ProfileProvider';
