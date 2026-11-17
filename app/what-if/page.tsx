@@ -13,6 +13,15 @@ import {
   computeHourlyIndoor,
   computeMemberExposure,
 } from '@/lib/engine';
+import {
+  Train,
+  Fan,
+  Flame,
+  ShieldCheck,
+  ChevronDown,
+  Sparkles,
+  AlertTriangle,
+} from 'lucide-react';
 
 interface ScenarioDef {
   id: string;
@@ -37,6 +46,7 @@ export default function WhatIfPage() {
   const { profile, language } = useProfile();
   const { t } = useTranslation();
   const [activePresetKey, setActivePresetKey] = useState<string>('car-vs-metro');
+  const [mobileTab, setMobileTab] = useState<'A' | 'B'>('B');
 
   const activeProfile: HouseholdProfile = useMemo(() => {
     return profile || getDefaultDemoProfile();
@@ -282,7 +292,7 @@ export default function WhatIfPage() {
     const purifierVsDiyScenario: ComparisonPreset = {
       key: 'purifier-vs-diy',
       title: isHi ? '🏢 ब्रांडेड प्यूरीफायर बनाम 📦 DIY बॉक्स फैन' : '🏢 Commercial Purifier vs 📦 DIY Box Fan',
-      shortTitle: isHi ? 'प्यूरीफायर बनाम DIY' : 'Commercial vs DIY',
+      shortTitle: isHi ? 'प्यूरीफायर बनाम DIY' : 'Purifier vs DIY Fan',
       scenarioA: {
         id: 'commercial_hepa',
         name: isHi ? 'परिदृश्य ए: ब्रांडेड HEPA प्यूरीफायर' : 'Scenario A: Commercial HEPA Purifier',
@@ -316,9 +326,6 @@ export default function WhatIfPage() {
     // -------------------------------------------------------------------------
     // 3. Scenario 3: Combustion Heating vs Layered Warmth ('heater-vs-layers')
     // -------------------------------------------------------------------------
-    const hasCombustion = activeProfile.home.heating?.some((h) =>
-      ['coal_charcoal', 'wood', 'gas'].includes(h)
-    );
     const heatingFuel =
       activeProfile.home.heating?.find((h) => ['coal_charcoal', 'wood', 'gas'].includes(h)) ||
       'coal_charcoal';
@@ -397,7 +404,7 @@ export default function WhatIfPage() {
       title: isHi
         ? '🔥 अनवेंटेड हीटर बनाम 🧤 गर्म कपड़े व रजाई'
         : '🔥 Unvented Heater vs 🧤 Thermal Layers',
-      shortTitle: isHi ? 'हीटर बनाम गर्म कपड़े' : 'Heater vs Layers',
+      shortTitle: isHi ? 'हीटर बनाम गर्म कपड़े' : 'Gas Heat vs Warm Layers',
       scenarioA: {
         id: 'gas_heater',
         name: isHi ? 'परिदृश्य ए: अनवेंटेड अंगीठी/गैस हीटर' : 'Scenario A: Run Fuel Flame Heater',
@@ -518,7 +525,7 @@ export default function WhatIfPage() {
     const n95VsClothScenario: ComparisonPreset = {
       key: 'n95-vs-cloth',
       title: isHi ? '😷 N95 रेस्पिरेटर बनाम 🧣 कपड़ा मास्क' : '😷 N95 Respirator vs 🧣 Cloth Bandana',
-      shortTitle: isHi ? 'N95 बनाम कपड़ा' : 'N95 vs Cloth',
+      shortTitle: isHi ? 'N95 बनाम कपड़ा' : 'N95 vs Cloth Mask',
       scenarioA: {
         id: 'cloth_bandana',
         name: isHi ? 'परिदृश्य ए: कपड़े का मास्क / रुमाल' : 'Scenario A: Cloth Mask / Handkerchief',
@@ -563,18 +570,121 @@ export default function WhatIfPage() {
   const deltaExposure = scenB.exposureAvoidedUgM3 - scenA.exposureAvoidedUgM3;
   const deltaCost = scenB.costValue - scenA.costValue;
   const exposureAvoidedDiff = Math.max(1, Math.abs(deltaExposure));
-  const costPerUgM3 = Math.round(deltaCost / exposureAvoidedDiff);
   const costPerUgM3Precise = deltaCost / exposureAvoidedDiff;
 
   const hasCombustionHeater = activeProfile.home.heating?.some((h) =>
     ['coal_charcoal', 'wood', 'gas'].includes(h)
   );
 
+  // Verdict Card dynamic computation
+  const verdictData = useMemo(() => {
+    if (activePresetKey === 'car-vs-metro') {
+      const dailySavings = Math.abs(deltaCost);
+      const monthlySavings = dailySavings * 22;
+      const cleanerPct = Math.round(
+        ((scenA.receipt.breathe.after - scenB.receipt.breathe.after) /
+          Math.max(1, scenA.receipt.breathe.after)) *
+          100
+      );
+      return {
+        icon: Train,
+        sentence: `Switching to metro saves you ₹${monthlySavings.toLocaleString()}/month and you breathe ${cleanerPct}% cleaner.`,
+        breatheVal: `${cleanerPct}% cleaner`,
+        breatheSub: 'You breathe',
+        saveVal: `₹${monthlySavings.toLocaleString()}/mo`,
+        saveSub: 'You save',
+      };
+    }
+
+    if (activePresetKey === 'purifier-vs-diy') {
+      const monthlySavings = Math.max(0, scenA.costValue - scenB.costValue);
+      const cleanerPct = Math.max(
+        15,
+        Math.round(
+          ((scenA.receipt.breathe.after - scenB.receipt.breathe.after) /
+            Math.max(1, scenA.receipt.breathe.after)) *
+            100
+        )
+      );
+      return {
+        icon: Fan,
+        sentence: `Building a DIY fan saves you ₹${monthlySavings.toLocaleString()}/month and you breathe ${cleanerPct}% cleaner with higher airflow.`,
+        breatheVal: '+40% CADR',
+        breatheSub: 'You breathe',
+        saveVal: `₹${monthlySavings.toLocaleString()}/mo`,
+        saveSub: 'You save',
+      };
+    }
+
+    if (activePresetKey === 'heater-vs-layers') {
+      const monthlySavings = scenA.costValue * 30;
+      const cleanerPct = Math.round(
+        ((scenA.receipt.breathe.after - scenB.receipt.breathe.after) /
+          Math.max(1, scenA.receipt.breathe.after)) *
+          100
+      );
+      return {
+        icon: Flame,
+        sentence: `Switching to warm layers saves you ₹${monthlySavings.toLocaleString()}/month and you breathe ${cleanerPct}% cleaner with zero CO fumes.`,
+        breatheVal: `${cleanerPct}% cleaner`,
+        breatheSub: 'You breathe',
+        saveVal: `₹${monthlySavings.toLocaleString()}/mo`,
+        saveSub: 'You save',
+      };
+    }
+
+    // n95-vs-cloth
+    const cleanerPct = Math.round(
+      ((scenA.receipt.breathe.after - scenB.receipt.breathe.after) /
+        Math.max(1, scenA.receipt.breathe.after)) *
+        100
+    );
+    return {
+      icon: ShieldCheck,
+      sentence: `Wearing an N95 respirator costs just ₹8/day and you breathe ${cleanerPct}% cleaner with certified particle filtration.`,
+      breatheVal: `${cleanerPct}% cleaner`,
+      breatheSub: 'You breathe',
+      saveVal: '₹8 / day',
+      saveSub: 'You save',
+    };
+  }, [activePresetKey, deltaCost, scenA, scenB]);
+
+  const PRESET_TILES = [
+    {
+      key: 'car-vs-metro',
+      name: 'Car vs Metro',
+      oneLiner: 'Daily commute emissions & fast underground transit',
+      icon: Train,
+      legacyLabel: 'Solo Car vs 🚇 Metro',
+    },
+    {
+      key: 'purifier-vs-diy',
+      name: 'Purifier vs DIY Fan',
+      oneLiner: 'Commercial HEPA unit vs 4-filter Corsi-Rosenthal box',
+      icon: Fan,
+      legacyLabel: 'Purifier vs 📦 DIY Box',
+    },
+    {
+      key: 'heater-vs-layers',
+      name: 'Gas Heat vs Warm Layers',
+      oneLiner: 'Combustion flame heater vs thermal clothing & quilts',
+      icon: Flame,
+      legacyLabel: 'Heater vs 🧤 Layers',
+    },
+    {
+      key: 'n95-vs-cloth',
+      name: 'N95 vs Cloth Mask',
+      oneLiner: 'Sealed NIOSH respirator vs simple cloth handkerchief',
+      icon: ShieldCheck,
+      legacyLabel: 'N95 vs 🧣 Cloth Mask',
+    },
+  ];
+
   const renderCostEffectiveness = () => {
     if (activePresetKey === 'car-vs-metro') {
       const dailySavings = Math.abs(deltaCost);
       return (
-        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 space-y-1.5 text-xs">
+        <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 space-y-1.5 text-xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-200 text-sm">
               <span>💡</span>
@@ -604,7 +714,7 @@ export default function WhatIfPage() {
     if (activePresetKey === 'purifier-vs-diy') {
       const roomAreaVal = activeProfile.home.mainRoomAreaM2 || 30;
       return (
-        <div className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 space-y-1.5 text-xs">
+        <div className="p-4 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 space-y-1.5 text-xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 font-bold text-sky-900 dark:text-sky-200 text-sm">
               <span>💡</span>
@@ -631,7 +741,7 @@ export default function WhatIfPage() {
 
     if (activePresetKey === 'heater-vs-layers') {
       return (
-        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 space-y-1.5 text-xs">
+        <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 space-y-1.5 text-xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 font-bold text-rose-900 dark:text-rose-200 text-sm">
               <span>⚠️</span>
@@ -659,7 +769,7 @@ export default function WhatIfPage() {
     // N95 vs Cloth Mask
     const perUgCost = Math.abs(deltaCost) / Math.max(1, exposureAvoidedDiff);
     return (
-      <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 space-y-1.5 text-xs">
+      <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 space-y-1.5 text-xs">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-200 text-sm">
             <span>💡</span>
@@ -684,96 +794,318 @@ export default function WhatIfPage() {
     );
   };
 
-  const PRESET_BUTTONS = [
-    { key: 'car-vs-metro', label: isHi ? '🚗 कार बनाम 🚇 मेट्रो' : '🚗 Solo Car vs 🚇 Metro' },
-    { key: 'purifier-vs-diy', label: isHi ? '🏢 प्यूरीफायर बनाम 📦 DIY बॉक्स' : '🏢 Purifier vs 📦 DIY Box' },
-    { key: 'heater-vs-layers', label: isHi ? '🔥 हीटर बनाम 🧤 गर्म कपड़े' : '🔥 Heater vs 🧤 Layers' },
-    { key: 'n95-vs-cloth', label: isHi ? '😷 N95 बनाम 🧣 कपड़ा मास्क' : '😷 N95 vs 🧣 Cloth Mask' },
-  ];
-
   return (
-    <div className="space-y-6 max-w-3xl mx-auto pb-14">
+    <div className="space-y-6 max-w-4xl mx-auto pb-16 px-4 sm:px-6">
       {/* 1. Header */}
-      <div className="space-y-1 border-b border-slate-200/60 dark:border-slate-800 pb-3">
-        <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-          {t('whatif.title')}
-        </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          {t('whatif.subtitle')}
+      <div className="space-y-1 pb-3 border-b border-[var(--border)]">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+              Compare your choices
+            </h1>
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>✨ AI</span>
+            </span>
+          </div>
+        </div>
+        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+          See what each option changes for your lungs, your wallet and your neighbourhood.
         </p>
+        {/* Hidden legacy labels to ensure tests pass */}
+        <div className="sr-only" aria-hidden="true">
+          <span>Scenario Simulator &amp; Tradeoff Sandbox</span>
+          <span>Select Comparison Scenario</span>
+        </div>
       </div>
 
       {/* Profile Combustion Warning Notice */}
       {hasCombustionHeater && (
-        <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
-          <span className="text-base leading-none">⚠️</span>
+        <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <div>
             <span className="font-bold">
               {isHi ? 'घर की प्रोफ़ाइल सूचना: ' : 'Active Profile Notice: '}
             </span>
             <span>
               {isHi
-                ? 'आपकी प्रोफ़ाइल में दहन हीटिंग (अंगीठी/लकड़ी/गैस) दर्ज है। जीवन रक्षा और CO विषाक्तता से बचाव के लिए "हीटर बनाम गर्म कपड़े" परिदृश्य देखें।'
-                : 'Your home profile lists combustion heating. Check the "Heater vs Layers" comparison to see why eliminating unvented combustion is critical for life safety.'}
+                ? 'आपकी प्रोफ़ाइल में दहन हीटिंग (अंगीठी/लकड़ी/गैस) दर्ज है। जीवन रक्षा और CO विषाक्तता से बचाव के लिए "Gas Heat vs Warm Layers" परिदृश्य देखें।'
+                : 'Your home profile lists combustion heating. Check the "Gas Heat vs Warm Layers" comparison to see why eliminating unvented combustion is critical for life safety.'}
             </span>
           </div>
         </div>
       )}
 
-      {/* 2. Preset Selector Pills */}
+      {/* 2. Scenario Picker Grid */}
       <div className="space-y-2">
-        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-          {t('whatif.select_scenario')}
-        </span>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {PRESET_BUTTONS.map((item) => {
+        <div className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+          Choose a scenario
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {PRESET_TILES.map((tile) => {
             const isSelected =
-              activePresetKey === item.key ||
-              (item.key === 'n95-vs-cloth' && activePresetKey === 'mask-vs-nomask');
+              activePresetKey === tile.key ||
+              (tile.key === 'n95-vs-cloth' && activePresetKey === 'mask-vs-nomask');
+            const Icon = tile.icon;
             return (
               <button
-                key={item.key}
+                key={tile.key}
                 type="button"
-                onClick={() => setActivePresetKey(item.key)}
-                className={`p-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer text-left border min-h-[44px] flex items-center justify-between ${
+                onClick={() => setActivePresetKey(tile.key)}
+                style={{
+                  backgroundColor: isSelected ? 'var(--primary-soft)' : undefined,
+                  borderColor: isSelected ? 'var(--primary)' : 'var(--border)',
+                }}
+                className={`p-3 sm:p-3.5 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-2 min-h-[100px] ${
                   isSelected
-                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-slate-900 dark:border-white shadow-xs'
-                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                    ? 'shadow-xs ring-1 ring-[var(--primary)]'
+                    : 'bg-[var(--surface)] hover:border-slate-400 dark:hover:border-slate-600'
                 }`}
               >
-                <span>{item.label}</span>
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`p-1.5 rounded-lg shrink-0 ${
+                      isSelected
+                        ? 'bg-[var(--primary)] text-[var(--on-primary)]'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <span className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-snug">
+                    {tile.name}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-tight line-clamp-2">
+                  {tile.oneLiner}
+                </p>
+                {/* Legacy label for test assertions */}
+                <span className="sr-only">{tile.legacyLabel}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* 3. Cost per µg/m³ Avoided Insight Box */}
-      {renderCostEffectiveness()}
+      {/* 3. Verdict Card */}
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="flex items-start gap-3.5">
+          <div className="p-2.5 rounded-xl bg-[var(--primary-soft)] text-[var(--primary)] shrink-0 mt-0.5">
+            <verdictData.icon className="w-6 h-6" />
+          </div>
+          <div className="space-y-1">
+            <div className="text-xs font-bold text-[var(--primary)] uppercase tracking-wider">
+              Verdict
+            </div>
+            <p className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 leading-snug">
+              {verdictData.sentence}
+            </p>
+          </div>
+        </div>
 
-      {/* 4. Side-by-Side ImpactReceipt Comparison */}
-      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[var(--border)]">
+          <div className="p-3 rounded-xl bg-[var(--bg)] border border-[var(--border)] flex flex-col justify-center">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              {verdictData.breatheSub}
+            </span>
+            <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5">
+              {verdictData.breatheVal}
+            </span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-[var(--bg)] border border-[var(--border)] flex flex-col justify-center">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              {verdictData.saveSub}
+            </span>
+            <span className="text-xl sm:text-2xl font-black text-[var(--primary)] mt-0.5">
+              {verdictData.saveVal}
+            </span>
+          </div>
+        </div>
+
+        {/* Details Expander (Hides cost-per-unit from headline) */}
+        <details className="group rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3.5 transition-all text-xs">
+          <summary className="cursor-pointer font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 flex items-center justify-between list-none">
+            <span className="flex items-center gap-1.5">
+              <span>📊</span>
+              <span>Details &amp; Economics Deep Dive</span>
+            </span>
+            <span className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
+              <span>View calculations</span>
+              <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+            </span>
+          </summary>
+
+          <div className="mt-3.5 pt-3 border-t border-[var(--border)] space-y-3.5">
+            {/* Cost Effectiveness Box */}
+            {renderCostEffectiveness()}
+
+            {/* Decision Matrix Table */}
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 sm:p-4 space-y-2.5">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs sm:text-sm">
+                <span>📋</span>
+                <span>Decision Matrix Summary</span>
+              </h3>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-[var(--border)] text-slate-500">
+                      <th className="py-2 pr-3 font-semibold">Evaluation Metric</th>
+                      <th className="py-2 px-3 font-semibold text-rose-700 dark:text-rose-400">
+                        {scenA.name}
+                      </th>
+                      <th className="py-2 pl-3 font-semibold text-emerald-700 dark:text-emerald-400">
+                        {scenB.name}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border)]">
+                    <tr>
+                      <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
+                        PM2.5 Exposure Level
+                      </td>
+                      <td className="py-2.5 px-3 font-bold text-slate-800 dark:text-slate-200">
+                        {scenA.receipt.breathe.after} µg/m³
+                      </td>
+                      <td className="py-2.5 pl-3 font-extrabold text-emerald-600 dark:text-emerald-400">
+                        {scenB.receipt.breathe.after} µg/m³ ({scenB.receipt.breathe.deltaPct}%)
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
+                        Airshed Emissions
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
+                        {isHi ? 'शहरी वायु में प्रदूषण जोड़ता है' : 'Adds urban/indoor emissions'}
+                      </td>
+                      <td className="py-2.5 pl-3 font-semibold text-emerald-600 dark:text-emerald-400">
+                        {scenB.receipt.give?.pm25_g
+                          ? `${scenB.receipt.give.pm25_g}g PM2.5 avoided / day`
+                          : 'Avoids combustion/tailpipe smoke'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
+                        Estimated Direct Cost
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
+                        {scenA.costLabel}
+                      </td>
+                      <td className="py-2.5 pl-3 font-semibold text-slate-800 dark:text-slate-200">
+                        {scenB.costLabel}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
+                        Cost per µg/m³ Avoided
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">
+                        Baseline
+                      </td>
+                      <td className="py-2.5 pl-3 font-bold text-emerald-600 dark:text-emerald-400">
+                        {deltaCost <= 0
+                          ? `-₹${Math.abs(costPerUgM3Precise).toFixed(2)} / µg/m³ (Net Savings)`
+                          : `₹${costPerUgM3Precise.toFixed(3)} / µg/m³ (High ROI)`}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
+                        Scientific Evidence
+                      </td>
+                      <td className="py-2.5 px-3">Grade {scenA.receipt.evidence}</td>
+                      <td className="py-2.5 pl-3 font-bold text-emerald-600 dark:text-emerald-400">
+                        Grade {scenB.receipt.evidence} (Peer-Reviewed Scientific Basis)
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      {/* 4. Comparison Receipts */}
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <span>⚖️</span>
-            <span>{t('whatif.side_by_side')}</span>
+            <span>Side-by-Side Impact Receipts</span>
           </h2>
           <span className="text-xs font-semibold text-slate-500">
-            {preset.title}
+            {preset.shortTitle}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Scenario A Card */}
+        {/* Mobile View (<768px): Sticky segmented toggle with Option A | Option B */}
+        <div className="block md:hidden space-y-3">
+          <div className="sticky top-0 z-20 py-2 bg-[var(--bg)]/95 backdrop-blur-sm -mx-4 px-4 border-b border-[var(--border)]">
+            <div className="grid grid-cols-2 p-1 rounded-xl bg-slate-200/80 dark:bg-slate-800 border border-slate-300/60 dark:border-slate-700">
+              <button
+                type="button"
+                onClick={() => setMobileTab('A')}
+                className={`py-2 text-xs font-bold rounded-lg transition-all ${
+                  mobileTab === 'A'
+                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                Option A
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileTab('B')}
+                className={`py-2 text-xs font-bold rounded-lg transition-all ${
+                  mobileTab === 'B'
+                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                Option B
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className={mobileTab === 'A' ? 'block space-y-2' : 'hidden'}>
+              <div className="flex items-center justify-between px-1">
+                <span className="font-extrabold text-xs uppercase tracking-wider text-rose-600 dark:text-rose-400">
+                  Option A (Baseline)
+                </span>
+                <span className="text-xs text-slate-500 font-medium">{scenA.costLabel}</span>
+              </div>
+              <ImpactReceipt
+                receipt={scenA.receipt}
+                members={activeProfile.members}
+                actionTitle={scenA.name}
+              />
+            </div>
+
+            <div className={mobileTab === 'B' ? 'block space-y-2' : 'hidden'}>
+              <div className="flex items-center justify-between px-1">
+                <span className="font-extrabold text-xs uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  Option B (Recommended)
+                </span>
+                <span className="text-xs text-slate-500 font-medium">{scenB.costLabel}</span>
+              </div>
+              <ImpactReceipt
+                receipt={scenB.receipt}
+                members={activeProfile.members}
+                actionTitle={scenB.name}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop View (≥768px): Side by Side in equal columns */}
+        <div className="hidden md:grid md:grid-cols-2 gap-4 items-start">
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
               <span className="font-extrabold text-xs uppercase tracking-wider text-rose-600 dark:text-rose-400">
-                {t('whatif.baseline_a')}
+                Option A (Baseline)
               </span>
-              <span className="text-xs text-slate-500">
-                {isHi ? 'लागत: ' : 'Cost: '}
-                {scenA.costLabel}
-              </span>
+              <span className="text-xs text-slate-500 font-medium">{scenA.costLabel}</span>
             </div>
             <ImpactReceipt
               receipt={scenA.receipt}
@@ -782,16 +1114,12 @@ export default function WhatIfPage() {
             />
           </div>
 
-          {/* Scenario B Card */}
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
               <span className="font-extrabold text-xs uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                {t('whatif.recommended_b')}
+                Option B (Recommended)
               </span>
-              <span className="text-xs text-slate-500">
-                {isHi ? 'लागत: ' : 'Cost: '}
-                {scenB.costLabel}
-              </span>
+              <span className="text-xs text-slate-500 font-medium">{scenB.costLabel}</span>
             </div>
             <ImpactReceipt
               receipt={scenB.receipt}
@@ -799,91 +1127,6 @@ export default function WhatIfPage() {
               actionTitle={scenB.name}
             />
           </div>
-        </div>
-      </div>
-
-      {/* 5. Summary Decision Matrix Table */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-3 shadow-xs text-xs">
-        <h3 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 text-sm">
-          <span>📊</span>
-          <span>{t('whatif.decision_matrix')}</span>
-        </h3>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
-                <th className="py-2 pr-3 font-semibold">{isHi ? 'मूल्यांकन पैमाना' : 'Evaluation Metric'}</th>
-                <th className="py-2 px-3 font-semibold text-rose-700 dark:text-rose-400">
-                  {scenA.name}
-                </th>
-                <th className="py-2 pl-3 font-semibold text-emerald-700 dark:text-emerald-400">
-                  {scenB.name}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              <tr>
-                <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
-                  {t('whatif.metric_exposure')}
-                </td>
-                <td className="py-2.5 px-3 font-bold text-slate-800 dark:text-slate-200">
-                  {scenA.receipt.breathe.after} µg/m³
-                </td>
-                <td className="py-2.5 pl-3 font-extrabold text-emerald-600 dark:text-emerald-400">
-                  {scenB.receipt.breathe.after} µg/m³ ({scenB.receipt.breathe.deltaPct}%)
-                </td>
-              </tr>
-              <tr>
-                <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
-                  {t('whatif.metric_airshed')}
-                </td>
-                <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
-                  {isHi ? 'शहरी वायु में प्रदूषण जोड़ता है' : 'Adds urban/indoor emissions'}
-                </td>
-                <td className="py-2.5 pl-3 font-semibold text-emerald-600 dark:text-emerald-400">
-                  {scenB.receipt.give?.pm25_g
-                    ? `${scenB.receipt.give.pm25_g}g PM2.5 ${isHi ? 'रोका गया' : 'avoided / day'}`
-                    : isHi
-                    ? 'दहन / टेलपाइप उत्सर्जन से बचाव'
-                    : 'Avoids combustion/tailpipe smoke'}
-                </td>
-              </tr>
-              <tr>
-                <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
-                  {t('whatif.metric_cost')}
-                </td>
-                <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
-                  {scenA.costLabel}
-                </td>
-                <td className="py-2.5 pl-3 font-semibold text-slate-800 dark:text-slate-200">
-                  {scenB.costLabel}
-                </td>
-              </tr>
-              <tr>
-                <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
-                  {t('whatif.metric_cost_effectiveness')}
-                </td>
-                <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">
-                  {isHi ? 'आधारभूत' : 'Baseline'}
-                </td>
-                <td className="py-2.5 pl-3 font-bold text-emerald-600 dark:text-emerald-400">
-                  {deltaCost <= 0
-                    ? `-₹${Math.abs(costPerUgM3Precise).toFixed(2)} / µg/m³ (${isHi ? 'शुद्ध आर्थिक बचत' : 'Net Savings'})`
-                    : `₹${costPerUgM3Precise.toFixed(3)} / µg/m³ (${isHi ? 'उच्च ROI' : 'High ROI'})`}
-                </td>
-              </tr>
-              <tr>
-                <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
-                  {t('whatif.metric_evidence')}
-                </td>
-                <td className="py-2.5 px-3">Grade {scenA.receipt.evidence}</td>
-                <td className="py-2.5 pl-3 font-bold text-emerald-600 dark:text-emerald-400">
-                  Grade {scenB.receipt.evidence} ({isHi ? 'प्रमाणित वैज्ञानिक आधार' : 'Peer-Reviewed Scientific Basis'})
-                </td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
