@@ -8,9 +8,6 @@ import { generateFallbackPlan } from '@/lib/gemini/fallback';
 import { Plan, HourlyAir, Action } from '@/lib/schemas';
 import { DayTimeline } from '@/components/air/DayTimeline';
 import { ImpactReceipt } from '@/components/receipt/ImpactReceipt';
-import { MemberTabs } from '@/components/members/MemberTabs';
-import { SafetyBanner } from '@/components/common/SafetyBanner';
-import { WhatsAppSummary, WhatsAppPlanData } from '@/components/common/WhatsAppSummary';
 import { OfflineBanner } from '@/components/common/OfflineBanner';
 import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
 import { OnboardingStepper } from '@/components/onboarding/OnboardingStepper';
@@ -21,6 +18,7 @@ import {
   computeHourlyIndoor,
 } from '@/lib/engine';
 import actionsData from '@/data/actions.json';
+import { AlertTriangle, Share2, Copy, Check, X } from 'lucide-react';
 
 export default function PlanPage() {
   const { profile, isDemoMode, language, setProfile } = useProfile();
@@ -29,8 +27,9 @@ export default function PlanPage() {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [hourlyAir, setHourlyAir] = useState<HourlyAir[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeMemberId, setActiveMemberId] = useState<string>('');
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('all');
+  const [showShareModal, setShowShareModal] = useState<boolean>(false);
+  const [copiedShare, setCopiedShare] = useState<boolean>(false);
 
   useEffect(() => {
     const prof = effectiveProfile;
@@ -40,7 +39,6 @@ export default function PlanPage() {
     async function fetchPlan() {
       if (!prof) return;
       setLoading(true);
-      setError(null);
       try {
         const airData = await getAirQuality(
           prof.location.lat,
@@ -97,7 +95,7 @@ export default function PlanPage() {
   // If user has no profile and not in demo mode, prompt onboarding
   if (!profile && !isDemoMode && !loading) {
     return (
-      <div className="max-w-2xl mx-auto py-4">
+      <div className="max-w-2xl mx-auto px-4 py-6">
         <OnboardingStepper
           onComplete={(newProf) => {
             setProfile(newProf);
@@ -110,7 +108,7 @@ export default function PlanPage() {
   // Loading Skeleton State
   if (loading && !plan) {
     return (
-      <div className="space-y-6 max-w-3xl mx-auto pb-14">
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6 pb-24">
         <LoadingSkeleton type="plan" />
       </div>
     );
@@ -121,19 +119,12 @@ export default function PlanPage() {
   }
 
   const members = effectiveProfile?.members || [];
-  const currentMember =
-    members.find((m) => m.id === activeMemberId) || members[0];
-  const currentMemberId = currentMember?.id || '';
-
-  const memberTipsObj = plan.perMember.find(
-    (pm) => pm.memberId === currentMemberId
-  );
-  const currentTips = memberTipsObj?.tips || [];
 
   // Ranked actions for dynamic receipt lookup
   const rankedActions = effectiveProfile
     ? rankActions(effectiveProfile, hourlyAir || undefined)
     : [];
+  const top3Ranked = rankedActions.slice(0, 3);
 
   // Calculate dynamic best ventilation windows
   const outdoorList = (hourlyAir || []).map((h) => h.pm25);
@@ -147,6 +138,16 @@ export default function PlanPage() {
       ['coal_charcoal', 'wood', 'gas'].includes(h)
     )
   );
+
+  const hasCoalOrWoodHeating = Boolean(
+    effectiveProfile?.home.heating.some((h) =>
+      ['coal_charcoal', 'wood'].includes(h)
+    )
+  );
+
+  const asthmaticMembers =
+    effectiveProfile?.members.filter((m) => m.conditions.includes('asthma')) || [];
+  const hasAsthmaticMember = asthmaticMembers.length > 0;
 
   const computedWindows = indoorResult
     ? bestWindows(outdoorList, indoorResult.hourlyIndoor, {
@@ -180,27 +181,6 @@ export default function PlanPage() {
     aqi: hourlyAir?.[entry.hour]?.usAqi,
   }));
 
-  // Format WhatsApp share data
-  const planDataForWhatsApp: WhatsAppPlanData = {
-    aqi: hourlyAir?.[0]?.usAqi || 350,
-    aqiBand: plan.severityTier,
-    topActions: plan.topActions.map((ta, i) => {
-      const cleanId = ta.receiptId.replace(/^rcpt_/, '');
-      const action =
-        actionsData.find((a) => a.id === cleanId) || rankedActions[i]?.action;
-      const title = action?.title || ta.why;
-      const pct = rankedActions[i]?.receipt.breathe.deltaPct || 35;
-      return {
-        title,
-        impact: `-${pct}% inhalation exposure`,
-      };
-    }),
-    bestVentilationWindow:
-      bestWindowsFormatted.length > 0
-        ? `${bestWindowsFormatted[0].start}:00 - ${bestWindowsFormatted[0].end}:00`
-        : '13:00 - 15:00',
-  };
-
   const formattedGeneratedAt = plan.generatedAt
     ? new Date(plan.generatedAt).toLocaleTimeString([], {
         hour: '2-digit',
@@ -208,255 +188,314 @@ export default function PlanPage() {
       })
     : '08:30 AM';
 
+  // Severity chip configuration
+  const getSeverityChipMeta = (tier: string) => {
+    const lower = tier.toLowerCase();
+    if (
+      lower.includes('hazard') ||
+      lower.includes('severe') ||
+      lower.includes('emergency')
+    ) {
+      return {
+        label: 'Severe Hazard — protect lungs now',
+        chipClass:
+          'bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-950/80 dark:text-rose-200 dark:border-rose-800',
+        dotClass: 'bg-rose-600',
+      };
+    }
+    if (
+      lower.includes('very poor') ||
+      lower.includes('very unhealthy') ||
+      lower.includes('very-unhealthy')
+    ) {
+      return {
+        label: 'Very Unhealthy — take action now',
+        chipClass:
+          'bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-950/80 dark:text-purple-200 dark:border-purple-800',
+        dotClass: 'bg-purple-600',
+      };
+    }
+    if (lower.includes('poor') || lower.includes('unhealthy')) {
+      return {
+        label: 'Unhealthy — wear masks & run purifiers',
+        chipClass:
+          'bg-orange-100 text-orange-900 border-orange-300 dark:bg-orange-950/80 dark:text-orange-200 dark:border-orange-800',
+        dotClass: 'bg-orange-600',
+      };
+    }
+    if (lower.includes('moderate')) {
+      return {
+        label: 'Moderate — sensitive members take care',
+        chipClass:
+          'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-800',
+        dotClass: 'bg-amber-600',
+      };
+    }
+    return {
+      label: 'Good Air — safe outdoors',
+      chipClass:
+        'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-200 dark:border-emerald-800',
+      dotClass: 'bg-emerald-600',
+    };
+  };
+
+  const severityMeta = getSeverityChipMeta(plan.severityTier);
+
+  // Selected member guidance if any
+  const selectedMember = members.find((m) => m.id === selectedMemberId);
+  const selectedMemberTips =
+    plan.perMember.find((pm) => pm.memberId === selectedMemberId)?.tips || [];
+
+  // WhatsApp share message
+  const ventWindowStr =
+    bestWindowsFormatted.length > 0
+      ? `${bestWindowsFormatted[0].start}:00 – ${bestWindowsFormatted[0].end}:00`
+      : '13:00 – 15:00';
+
+  const topActionsSummary = top3Ranked
+    .map(
+      (item, idx) =>
+        `${idx + 1}. ${item.action.title} (${item.receipt.breathe.deltaPct}% exposure)`
+    )
+    .join('\n');
+
+  const summaryText = `🌬️ Saans Family Air Plan
+Tomorrow's Forecast: ${plan.severityTier}
+
+Top 3 Actions:
+${
+  topActionsSummary ||
+  '1. Run air purifier\n2. Wear N95 outdoors\n3. Keep windows shut'
+}
+
+Best Ventilation Window:
+${ventWindowStr} (15m cross-flush)
+
+Tailored for ${effectiveProfile?.location.placeName || 'Family'} · Saans
+https://saans.local`;
+
+  const handleCopyShare = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(summaryText);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = summaryText;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 2500);
+    } catch {
+      alert('Plan copied to clipboard!');
+    }
+  };
+
   return (
-    <div className="space-y-6 max-w-3xl mx-auto pb-14">
+    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6 pb-24">
       {/* Offline Status Notice */}
       <OfflineBanner lastUpdated={formattedGeneratedAt} />
 
-      {/* 1. Headline & Severity Tier */}
-      <div className="space-y-3 border-b border-slate-200/60 dark:border-slate-800 pb-3">
+      {/* 1. Header Section */}
+      <header className="space-y-3">
+        {/* Severity Chip */}
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-            {language === 'hi'
-              ? 'कल की वायु सुरक्षा योजना'
-              : "Tomorrow's Air Protection Plan"}
-          </h1>
-          <div className="flex items-center gap-2">
-            <WhatsAppSummary planData={planDataForWhatsApp} />
-            {/* Severity Tier Badge */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800 shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-rose-600 animate-ping" />
-              <span>{plan.severityTier}</span>
-            </div>
+          <div
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-2xs ${severityMeta.chipClass}`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${severityMeta.dotClass} animate-pulse`}
+            />
+            <span>{severityMeta.label}</span>
           </div>
+
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            {effectiveProfile?.location.placeName || 'Delhi NCR'}
+          </span>
         </div>
 
-        <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-          {plan.headline}
-        </div>
-
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        {/* Title & Plain-Language Sentence */}
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
           {language === 'hi'
-            ? 'के लिए निर्धारित 24 घंटे का शेड्यूल'
-            : 'Targeted 24-hour schedule calibrated for'}{' '}
-          <strong className="text-slate-700 dark:text-slate-300">
-            {effectiveProfile?.location.placeName || 'New Delhi, India'}
-          </strong>{' '}
-          •{' '}
-          {isDemoMode
-            ? language === 'hi'
-              ? '⚡ डेमो पूर्वानुमान मोड'
-              : '⚡ Demo Forecast Mode'
-            : language === 'hi'
-            ? 'लाइव भौतिकी कैलिब्रेशन'
-            : 'Live Physics Calibration'}
-        </p>
-      </div>
+            ? 'कल के लिए आपकी पारिवारिक वायु सुरक्षा योजना'
+            : "Tomorrow's Air Plan"}
+        </h1>
 
-      {/* 2. 24-Hour Timeline */}
+        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+          Here&apos;s your plan for tomorrow, tailored for your family.
+        </p>
+
+        {/* Member Filter Chips */}
+        {members.length > 0 && (
+          <div className="pt-2">
+            <div className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">
+              Filter timeline by family member:
+            </div>
+            <div
+              role="tablist"
+              aria-label="Filter timeline by member"
+              className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-hide"
+            >
+              <button
+                type="button"
+                onClick={() => setSelectedMemberId('all')}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border whitespace-nowrap shrink-0 ${
+                  selectedMemberId === 'all'
+                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-slate-900 dark:border-white shadow-xs'
+                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+                }`}
+              >
+                All Family ({members.length})
+              </button>
+              {members.map((member) => {
+                const isSelected = selectedMemberId === member.id;
+                return (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => setSelectedMemberId(member.id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border whitespace-nowrap shrink-0 ${
+                      isSelected
+                        ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-slate-900 dark:border-white shadow-xs'
+                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <span className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700 text-[10px] flex items-center justify-center font-bold">
+                      {member.nickname.charAt(0).toUpperCase()}
+                    </span>
+                    <span>{member.nickname}</span>
+                    {member.conditions.includes('asthma') && (
+                      <span title="Asthma">🫁</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Selected Member Guidance Note */}
+            {selectedMember && selectedMemberTips.length > 0 && (
+              <div className="mt-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 space-y-1">
+                <span className="font-bold text-slate-900 dark:text-slate-100">
+                  Focus for {selectedMember.nickname}:
+                </span>
+                <ul className="list-disc list-inside space-y-0.5 text-slate-600 dark:text-slate-300">
+                  {selectedMemberTips.map((tip, idx) => (
+                    <li key={idx}>{tip}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </header>
+
+      {/* 2. Day Timeline */}
       <section className="space-y-2">
         <DayTimeline
           timeline={timelineWithAir}
           bestWindows={bestWindowsFormatted}
+          members={members}
+          selectedMemberId={selectedMemberId}
         />
       </section>
 
-      {/* 3. Top 3 Actions as Signature Impact Receipts */}
+      {/* 3. Top 3 Priority Receipts */}
       <section className="space-y-3 pt-2">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <span>📋</span>
-            <span>
-              {language === 'hi'
-                ? 'शीर्ष 3 उच्च-प्रभाव हस्तक्षेप'
-                : 'Top 3 High-Impact Interventions'}
-            </span>
+            <span>Top 3 Priority Interventions</span>
           </h2>
-          <span className="text-xs font-semibold text-sky-600 dark:text-sky-400">
-            {language === 'hi'
-              ? 'जोखिम में कमी द्वारा रैंक किया गया'
-              : 'Ranked by Exposure Averted'}
-          </span>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Ranked by calculated personal exposure averted for your household
+          </p>
         </div>
 
         <div className="space-y-4">
-          {plan.topActions.map((topAction, idx) => {
-            const cleanId = topAction.receiptId.replace(/^rcpt_/, '');
-            const matchedRanked =
-              rankedActions.find(
-                (r) =>
-                  r.receipt.id === topAction.receiptId ||
-                  r.action.id === cleanId
-              ) || rankedActions[idx];
-
-            const matchedAction =
-              (actionsData.find(
-                (a) => a.id === cleanId || a.id === matchedRanked?.action.id
-              ) as Action | undefined) || matchedRanked?.action;
-
-            const receipt =
-              matchedRanked?.receipt ||
-              (matchedAction && effectiveProfile
-                ? createReceiptForAction(
-                    matchedAction,
-                    effectiveProfile,
-                    hourlyAir || undefined
-                  )
-                : null);
-
-            const actionTitle =
-              matchedAction?.title ||
-              matchedRanked?.action.title ||
-              topAction.why;
-
-            if (!receipt) return null;
-
-            return (
-              <div key={receipt.id + '_' + idx} className="space-y-2">
-                <ImpactReceipt
-                  receipt={receipt}
-                  members={members}
-                  actionTitle={actionTitle}
-                />
-                {(topAction.how || topAction.whenWindow) && (
-                  <div className="px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 flex flex-wrap items-center justify-between gap-2">
-                    {topAction.whenWindow && (
-                      <span>
-                        <strong className="text-slate-900 dark:text-slate-100">
-                          {language === 'hi' ? 'समय:' : 'When:'}
-                        </strong>{' '}
-                        {topAction.whenWindow}
-                      </span>
-                    )}
-                    {topAction.forWhom && (
-                      <span>
-                        <strong className="text-slate-900 dark:text-slate-100">
-                          {language === 'hi' ? 'किसके लिए:' : 'For Whom:'}
-                        </strong>{' '}
-                        {topAction.forWhom}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {top3Ranked.map((item) => (
+            <ImpactReceipt
+              key={item.receipt.id}
+              receipt={item.receipt}
+              members={members}
+              actionTitle={item.action.title}
+            />
+          ))}
         </div>
       </section>
 
-      {/* 4. MemberTabs with Per-Member Tips */}
-      {members.length > 0 && currentMember && (
-        <section className="space-y-3 pt-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <span>🛡️</span>
-              <span>
-                {language === 'hi'
-                  ? 'व्यक्तिगत पारिवारिक मार्गदर्शन'
-                  : 'Individual Family Guidance'}
-              </span>
-            </h2>
+      {/* 4. Safety Notes Card (Compact) */}
+      {(hasCoalOrWoodHeating ||
+        hasAsthmaticMember ||
+        (plan.safetyNotes && plan.safetyNotes.length > 0)) && (
+        <section
+          role="region"
+          aria-label="Safety Directives"
+          className="rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-4 sm:p-5 space-y-3 shadow-2xs"
+        >
+          <div className="flex items-center gap-2 text-amber-950 dark:text-amber-200 font-bold text-sm">
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span>Important Safety Directives</span>
           </div>
 
-          <MemberTabs
-            members={members}
-            activeId={currentMember.id}
-            onChange={(id) => setActiveMemberId(id)}
-          />
-
-          {/* Selected Member Guidance Card */}
-          <div className="p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3 shadow-xs">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-              <span className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <span>{language === 'hi' ? 'सलाह:' : 'Guidance for'}</span>
-                <span className="text-sky-600 dark:text-sky-400">
-                  {currentMember.nickname}
+          <div className="space-y-2 text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
+            {/* CO Warning if coal/wood heating detected */}
+            {hasCoalOrWoodHeating && (
+              <div className="flex items-start gap-2">
+                <span className="font-bold shrink-0">⚠️ CO Hazard:</span>
+                <span>
+                  Coal/wood heating generates toxic Carbon Monoxide (CO). Never
+                  completely seal rooms while combustion heaters are active.
+                  Keep a window cracked at least 2 inches to guarantee fresh air
+                  exchange.
                 </span>
-              </span>
-              <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                {currentMember.ageBand.toUpperCase()}
-              </span>
-            </div>
-
-            {currentTips.length > 0 ? (
-              <ul className="space-y-2 text-xs">
-                {currentTips.map((tip, idx) => (
-                  <li
-                    key={idx}
-                    className="flex items-start gap-2 text-slate-700 dark:text-slate-300 leading-relaxed"
-                  >
-                    <span
-                      className="text-sky-500 font-bold"
-                      aria-hidden="true"
-                    >
-                      •
-                    </span>
-                    <span>{tip}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs text-slate-500 italic">
-                {language === 'hi'
-                  ? 'इस सदस्य के लिए कोई अतिरिक्त विशेष निर्देश नहीं हैं।'
-                  : 'No specific tailored precautions required for this member.'}
-              </p>
+              </div>
             )}
+
+            {/* Asthma Alert if asthmatic member */}
+            {hasAsthmaticMember && (
+              <div className="flex items-start gap-2">
+                <span className="font-bold shrink-0">🫁 Asthma Alert:</span>
+                <span>
+                  {asthmaticMembers.map((m) => m.nickname).join(', ')}{' '}
+                  {asthmaticMembers.length > 1 ? 'have' : 'has'} asthma. Keep
+                  rescue inhalers within reach, run bedroom purifier
+                  continuously, and avoid outdoor physical activity during morning
+                  and evening smog peaks.
+                </span>
+              </div>
+            )}
+
+            {/* General notes from plan if any */}
+            {plan.safetyNotes
+              ?.filter(
+                (note) =>
+                  !note.toLowerCase().includes('carbon monoxide') &&
+                  !note.toLowerCase().includes('asthma')
+              )
+              .slice(0, 2)
+              .map((note, idx) => (
+                <div key={idx} className="flex items-start gap-2">
+                  <span className="font-bold shrink-0">•</span>
+                  <span>{note}</span>
+                </div>
+              ))}
           </div>
+
+          <p className="text-[11px] text-amber-800/80 dark:text-amber-400/80 italic pt-1 border-t border-amber-200 dark:border-amber-800/60">
+            Not medical advice. In case of respiratory distress or emergency, call
+            112 immediately.
+          </p>
         </section>
       )}
 
-      {/* 5. Safety Directives */}
-      {plan.safetyNotes && plan.safetyNotes.length > 0 && (
-        <section className="space-y-3 pt-2">
-          <h2 className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <span>⚠️</span>
-            <span>
-              {language === 'hi' ? 'सुरक्षा निर्देश' : 'Safety Directives'}
-            </span>
-          </h2>
-
-          {plan.safetyNotes.map((note, idx) => {
-            let type: 'co_warning' | 'breathing_difficulty' | 'not_medical_advice' =
-              'breathing_difficulty';
-            const lower = note.toLowerCase();
-            if (
-              lower.includes('carbon monoxide') ||
-              lower.includes('co ') ||
-              lower.includes('combustion') ||
-              lower.includes('अंगीठी') ||
-              lower.includes('कार्बन')
-            ) {
-              type = 'co_warning';
-            } else if (
-              lower.includes('medical') ||
-              lower.includes('doctor') ||
-              lower.includes('सलाह') ||
-              lower.includes('चिकित्सा')
-            ) {
-              type = 'not_medical_advice';
-            }
-            return <SafetyBanner key={idx} type={type} message={note} />;
-          })}
-
-          {!plan.safetyNotes.some(
-            (n) =>
-              n.toLowerCase().includes('medical') ||
-              n.toLowerCase().includes('doctor')
-          ) && <SafetyBanner type="not_medical_advice" />}
-        </section>
-      )}
-
-      {/* 6. Scientific Citations & Bibliography */}
+      {/* 5. Scientific Citations & Bibliography */}
       {plan.citations && plan.citations.length > 0 && (
-        <footer className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 space-y-2 text-xs">
+        <footer className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 space-y-2 text-xs">
           <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
             <span>📚</span>
-            <span>
-              {language === 'hi'
-                ? 'वैज्ञानिक आधार और साक्ष्य उद्धरण'
-                : 'Scientific Basis & Evidence Citations'}
-            </span>
+            <span>Scientific Evidence & Guidelines</span>
           </div>
           <ul className="space-y-1 text-[11px] text-slate-500 dark:text-slate-400 list-disc list-inside">
             {plan.citations.map((c, idx) => (
@@ -477,6 +516,86 @@ export default function PlanPage() {
             ))}
           </ul>
         </footer>
+      )}
+
+      {/* 6. Bottom WhatsApp Share Button */}
+      <div className="pt-2">
+        <button
+          type="button"
+          onClick={() => setShowShareModal(true)}
+          className="w-full min-h-[48px] py-3.5 px-4 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
+        >
+          <Share2 className="w-4 h-4" />
+          <span>Share Plan via WhatsApp</span>
+        </button>
+      </div>
+
+      {/* WhatsApp Share Modal / Sheet */}
+      {showShareModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setShowShareModal(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-t-2xl sm:rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 space-y-4 max-h-[90dvh] overflow-y-auto shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Share2 className="w-5 h-5 text-emerald-600" />
+                <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
+                  Share Family Plan
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowShareModal(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                aria-label="Close dialog"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300">
+              Share tomorrow&apos;s tailored air protection schedule with your
+              family WhatsApp group or caregivers.
+            </p>
+
+            {/* Message Preview Box */}
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs font-mono whitespace-pre-line text-slate-800 dark:text-slate-200 leading-relaxed select-all">
+              {summaryText}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <button
+                type="button"
+                onClick={handleCopyShare}
+                className="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl text-xs font-bold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                {copiedShare ? (
+                  <Check className="w-4 h-4 text-emerald-600" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+                <span>
+                  {copiedShare ? 'Copied to Clipboard!' : 'Copy Text'}
+                </span>
+              </button>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(summaryText)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 transition-colors text-center"
+              >
+                <Share2 className="w-4 h-4" />
+                <span>Open WhatsApp</span>
+              </a>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
