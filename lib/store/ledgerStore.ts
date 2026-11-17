@@ -143,3 +143,15 @@ function getDemoLedger(): LedgerEntry[] {
     },
   ];
 }
+
+export function useLedgerStore() {
+  return {
+    currentAQI: 167,
+    getLedger,
+    markDone,
+    unmarkDone,
+    isActionDoneToday,
+    getWeeklyTotals,
+  };
+}
+

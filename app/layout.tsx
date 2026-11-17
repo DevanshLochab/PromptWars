@@ -1,62 +1,70 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ProfileProvider } from '@/lib/store/ProfileProvider';
-import { Header } from '@/components/layout/Header';
-import { BottomNav } from '@/components/layout/BottomNav';
-import { ServiceWorkerRegister } from '@/components/layout/ServiceWorkerRegister';
+import Header from '@/components/layout/Header';
+import BottomNav from '@/components/layout/BottomNav';
+import SidebarNav from '@/components/layout/SidebarNav';
+import RightRail from '@/components/layout/RightRail';
+import ServiceWorkerRegister from '@/components/layout/ServiceWorkerRegister';
+import SettingsDrawer from '@/components/layout/SettingsDrawer';
 
 export const metadata: Metadata = {
-  title: 'Saans — Air Quality Coach',
-  description:
-    'Evidence-based hyper-local air quality decision engine and daily respiratory coach.',
+  title: 'Saans – Air Coach',
+  description: "Your family's personal air quality coach. Know your air. Act on it.",
   manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Saans',
-  },
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent' },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0284c7',
   width: 'device-width',
   initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#F6F4EF' },
+    { media: '(prefers-color-scheme: dark)', color: '#0F1514' },
+  ],
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                const stored = localStorage.getItem('saans_theme_preference');
-                if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                  document.documentElement.classList.add('dark');
-                } else {
-                  document.documentElement.classList.remove('dark');
-                }
-              } catch (e) {}
-            `,
+            __html: `try{var t=localStorage.getItem('saans-theme')||localStorage.getItem('saans_theme_preference');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`,
           }}
         />
       </head>
-      <body
-        suppressHydrationWarning
-        className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-sans selection:bg-sky-500 selection:text-white"
-      >
+      <body suppressHydrationWarning className="bg-[var(--bg)] text-[var(--text)] antialiased">
         <ProfileProvider>
           <ServiceWorkerRegister />
-          <div className="flex-1 flex flex-col max-w-md mx-auto w-full min-h-screen shadow-xs bg-white dark:bg-slate-900 pb-20">
+          <SettingsDrawer />
+
+          {/* Mobile/Tablet: header + scrollable main + bottom nav */}
+          <div className="lg:hidden flex flex-col min-h-dvh">
             <Header />
-            <main className="flex-1 p-4 overflow-y-auto">{children}</main>
+            <main className="flex-1 overflow-y-auto pb-[calc(var(--nav-h)+env(safe-area-inset-bottom,0px))] px-4 pt-2">
+              {children}
+            </main>
             <BottomNav />
+          </div>
+
+          {/* Desktop: sidebar + main + right rail */}
+          <div className="hidden lg:flex min-h-dvh">
+            <SidebarNav />
+            <div className="flex-1 flex justify-center">
+              <main className="w-full max-w-[720px] px-6 py-6">
+                {children}
+              </main>
+            </div>
+            <RightRail />
           </div>
         </ProfileProvider>
       </body>

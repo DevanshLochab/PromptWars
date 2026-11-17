@@ -6,14 +6,45 @@ import { useTranslation } from '@/lib/i18n';
 import { getStoredTheme, applyTheme, Theme } from '@/lib/store/themeStore';
 
 interface SettingsDrawerProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
+export function SettingsDrawer({ isOpen: controlledIsOpen, onClose: controlledOnClose }: SettingsDrawerProps = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledIsOpen !== undefined;
+  const isOpen = isControlled ? controlledIsOpen : internalOpen;
+
+  const onClose = controlledOnClose || (() => {
+    setInternalOpen(false);
+    if (typeof window !== 'undefined' && window.location.hash === '#settings') {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  });
+
   const { isDemoMode, language, updateLanguage, toggleDemoMode, resetAllData } = useProfile();
   const { t } = useTranslation();
   const [theme, setThemeState] = useState<Theme>('system');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const checkHash = () => {
+      if (window.location.hash === '#settings') {
+        setInternalOpen(true);
+      }
+    };
+    const handleOpenEvent = () => setInternalOpen(true);
+
+    checkHash();
+    window.addEventListener('hashchange', checkHash);
+    window.addEventListener('saans_open_settings', handleOpenEvent);
+
+    return () => {
+      window.removeEventListener('hashchange', checkHash);
+      window.removeEventListener('saans_open_settings', handleOpenEvent);
+    };
+  }, []);
 
   useEffect(() => {
     setThemeState(getStoredTheme());
@@ -175,3 +206,6 @@ export function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
     </div>
   );
 }
+
+export default SettingsDrawer;
+
