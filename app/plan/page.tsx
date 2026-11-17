@@ -22,6 +22,7 @@ import { AlertTriangle, Share2, Copy, Check, X } from 'lucide-react';
 
 export default function PlanPage() {
   const { profile, isDemoMode, language, setProfile } = useProfile();
+  const isHi = language === 'hi';
   const effectiveProfile = profile || (isDemoMode ? getDefaultDemoProfile() : null);
 
   const [plan, setPlan] = useState<Plan | null>(null);
@@ -324,14 +325,18 @@ https://saans.local`;
         </h1>
 
         <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
-          Here&apos;s your plan for tomorrow, tailored for your family.
+          {isHi
+            ? 'यहाँ आपके परिवार के लिए तैयार की गई कल की विशेष वायु सुरक्षा योजना है।'
+            : "Here's your plan for tomorrow, tailored for your family."}
         </p>
 
         {/* Member Filter Chips */}
         {members.length > 0 && (
           <div className="pt-2">
             <div className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">
-              Filter timeline by family member:
+              {isHi
+                ? 'परिवार के सदस्य अनुसार टाइमलाइन फ़िल्टर करें:'
+                : 'Filter timeline by family member:'}
             </div>
             <div
               role="tablist"
@@ -347,7 +352,7 @@ https://saans.local`;
                     : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
-                All Family ({members.length})
+                {isHi ? `पूरा परिवार (${members.length})` : `All Family (${members.length})`}
               </button>
               {members.map((member) => {
                 const isSelected = selectedMemberId === member.id;
@@ -406,10 +411,16 @@ https://saans.local`;
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <span>📋</span>
-            <span>Top 3 Priority Interventions</span>
+            <span>
+              {isHi
+                ? 'कल के शीर्ष ३ प्राथमिकता वाले कदम'
+                : 'Top 3 Priority Interventions'}
+            </span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Ranked by calculated personal exposure averted for your household
+            {isHi
+              ? 'आपके परिवार के लिए अनुमानित व्यक्तिगत जोखिम में कमी के आधार पर क्रमित'
+              : 'Ranked by calculated personal exposure averted for your household'}
           </p>
         </div>
 
@@ -436,7 +447,11 @@ https://saans.local`;
         >
           <div className="flex items-center gap-2 text-amber-950 dark:text-amber-200 font-bold text-sm">
             <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-            <span>Important Safety Directives</span>
+            <span>
+              {isHi
+                ? 'महत्वपूर्ण सुरक्षा एवं जीवन रक्षा निर्देश'
+                : 'Important Safety Directives'}
+            </span>
           </div>
 
           <div className="space-y-2 text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
@@ -526,7 +541,9 @@ https://saans.local`;
           className="w-full min-h-[48px] py-3.5 px-4 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
         >
           <Share2 className="w-4 h-4" />
-          <span>Share Plan via WhatsApp</span>
+          <span>
+            {isHi ? 'व्हाट्सएप पर सुरक्षा योजना साझा करें' : 'Share Plan via WhatsApp'}
+          </span>
         </button>
       </div>
 

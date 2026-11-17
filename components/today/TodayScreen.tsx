@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { useProfile } from '@/lib/store/ProfileProvider';
+import { useTranslation } from '@/lib/i18n';
 import { getDefaultDemoProfile } from '@/lib/store/profileStore';
 import { HourlyAir, Member, HouseholdProfile } from '@/lib/schemas';
 import { TwoLedger } from '@/components/air/TwoLedger';
@@ -21,6 +22,15 @@ export interface TodayScreenProps {
   hourlyData?: HourlyAir[] | null;
   className?: string;
 }
+
+const HI_BANDS: Record<string, string> = {
+  Good: 'अच्छा (Good)',
+  Moderate: 'मध्यम (Moderate)',
+  'Unhealthy for Sensitive Groups': 'संवेदनशील वर्ग हेतु अस्वस्थ',
+  Unhealthy: 'अस्वस्थ (Unhealthy)',
+  'Very Unhealthy': 'अत्यंत अस्वस्थ (Very Unhealthy)',
+  Hazardous: 'अति-गंभीर (Hazardous)',
+};
 
 // Band color helper matching Step 1 RightRail
 function getBandMeta(aqi: number) {
@@ -55,6 +65,8 @@ export function TodayScreen({
   className = '',
 }: TodayScreenProps) {
   const store = useProfile();
+  const { lang } = useTranslation();
+  const isHi = lang === 'hi';
   const effectiveProfile =
     propProfile || store.profile || (store.isDemoMode ? getDefaultDemoProfile() : null);
 
@@ -242,39 +254,39 @@ export function TodayScreen({
 
     if (isVulnerable) {
       if (aqi > 100) {
-        statusChip = 'Stay in';
+        statusChip = isHi ? 'घर में रहें' : 'Stay in';
         statusType = 'danger';
         if (m.conditions.includes('asthma')) {
-          reason = 'Asthma triggers peak during cold smog spikes';
+          reason = isHi ? 'सर्द धुंध के दौरान अस्थमा ट्रिगर्स चरम पर होते हैं' : 'Asthma triggers peak during cold smog spikes';
         } else if (m.ageBand === 'infant' || m.ageBand === 'toddler') {
-          reason = 'Developing airways need continuous filtered air';
+          reason = isHi ? 'विकसित हो रहे फेफड़ों को निरंतर छनी हुई हवा चाहिए' : 'Developing airways need continuous filtered air';
         } else if (m.ageBand === 'senior') {
-          reason = 'Cardiovascular strain elevated in high AQI';
+          reason = isHi ? 'उच्च AQI में हृदय और फेफड़ों पर दबाव बढ़ जाता है' : 'Cardiovascular strain elevated in high AQI';
         } else {
-          reason = 'Pre-existing health condition requires indoor protection';
+          reason = isHi ? 'स्वास्थ्य स्थिति के कारण इनडोर सुरक्षा आवश्यक है' : 'Pre-existing health condition requires indoor protection';
         }
       } else if (aqi > 50) {
-        statusChip = 'Mask up outside';
+        statusChip = isHi ? 'मास्क पहनें' : 'Mask up outside';
         statusType = 'warn';
-        reason = 'Wear fitted N95 mask for prolonged outdoor activities';
+        reason = isHi ? 'लंबे समय तक बाहर रहने पर N95 मास्क पहनें' : 'Wear fitted N95 mask for prolonged outdoor activities';
       }
     } else {
       if (aqi > 150) {
-        statusChip = 'Stay in';
+        statusChip = isHi ? 'घर में रहें' : 'Stay in';
         statusType = 'danger';
-        reason = 'Unhealthy particulate levels — avoid outdoor exertion';
+        reason = isHi ? 'हवा जहरीली है — बाहरी मेहनत से बचें' : 'Unhealthy particulate levels — avoid outdoor exertion';
       } else if (aqi > 100) {
-        statusChip = 'Mask up outside';
+        statusChip = isHi ? 'मास्क पहनें' : 'Mask up outside';
         statusType = 'warn';
         if (m.commute.mode === 'two_wheeler' || m.commute.mode === 'walk') {
-          reason = 'High exposure along traffic corridor during commute';
+          reason = isHi ? 'सड़क पर आवागमन के दौरान अधिक जहरीले कण मिलते हैं' : 'High exposure along traffic corridor during commute';
         } else {
-          reason = 'Wear an N95 respirator during outdoor hours';
+          reason = isHi ? 'बाहर रहने के दौरान N95 रेस्पिरेटर पहनें' : 'Wear an N95 respirator during outdoor hours';
         }
       } else {
-        statusChip = 'OK outdoors';
+        statusChip = isHi ? 'बाहर सुरक्षित' : 'OK outdoors';
         statusType = 'success';
-        reason = 'Air quality acceptable for normal outdoor movement';
+        reason = isHi ? 'सामान्य आवाजाही के लिए हवा स्वीकार्य है' : 'Air quality acceptable for normal outdoor movement';
       }
     }
 
@@ -292,7 +304,7 @@ export function TodayScreen({
         className="rounded-[var(--radius-card)] p-6 sm:p-8 bg-[var(--surface)] border border-[var(--border)] shadow-xs flex flex-col items-center text-center"
       >
         <p className="text-xs text-[var(--muted)] font-semibold uppercase tracking-wider mb-2">
-          US AQI · updated 12 min ago
+          {isHi ? 'US AQI · १२ मिनट पहले अपडेट' : 'US AQI · updated 12 min ago'}
         </p>
 
         {/* Large AQI Number styled with band color */}
@@ -308,12 +320,14 @@ export function TodayScreen({
           className="text-xl sm:text-2xl font-extrabold tracking-tight mt-1"
           style={{ color: bandColor }}
         >
-          {band}
+          {isHi ? HI_BANDS[band] || band : band}
         </div>
 
         {/* Conversion vs WHO guideline */}
         <p className="text-sm sm:text-base font-semibold text-[var(--text)] mt-2">
-          About {whoMultiple}× the WHO daily guideline
+          {isHi
+            ? `WHO दैनिक मानक से लगभग ${whoMultiple}× गुना`
+            : `About ${whoMultiple}× the WHO daily guideline`}
         </p>
 
         {/* PM2.5 small and muted */}
@@ -327,10 +341,10 @@ export function TodayScreen({
         <section className="space-y-2.5">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--muted)]">
-              Family Member Status
+              {isHi ? 'परिवार के सदस्यों की स्थिति' : 'Family Member Status'}
             </h2>
             <span className="text-xs text-[var(--muted)]">
-              {members.length} {members.length === 1 ? 'member' : 'members'}
+              {isHi ? `${members.length} सदस्य` : `${members.length} ${members.length === 1 ? 'member' : 'members'}`}
             </span>
           </div>
 
@@ -385,10 +399,10 @@ export function TodayScreen({
         <section className="space-y-2.5">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-extrabold text-[var(--text)] tracking-tight">
-              Your top action today
+              {isHi ? 'आज का सबसे असरदार कदम' : 'Your top action today'}
             </h2>
             <span className="text-xs font-semibold text-[var(--primary)]">
-              Ranked highest impact
+              {isHi ? 'सर्वोच्च प्राथमिकता' : 'Ranked highest impact'}
             </span>
           </div>
 
@@ -405,23 +419,27 @@ export function TodayScreen({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="font-bold text-sm sm:text-base text-[var(--text)]">
-              Best Times Today
+              {isHi ? 'आज का सबसे अच्छा समय' : 'Best Times Today'}
             </h3>
             <p className="text-xs text-[var(--muted)]">
-              Hourly US AQI bands across the 24-hour diurnal cycle
+              {isHi
+                ? '24 घंटे के चक्र में प्रति घंटे का US AQI'
+                : 'Hourly US AQI bands across the 24-hour diurnal cycle'}
             </p>
           </div>
 
           {/* 3 labeled windows */}
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <span className="px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-              Best window: {formatHour(bestWindow.start)}–{formatHour(bestWindow.end)}
+              {isHi
+                ? `खिड़की: ${formatHour(bestWindow.start)}–${formatHour(bestWindow.end)}`
+                : `Best window: ${formatHour(bestWindow.start)}–${formatHour(bestWindow.end)}`}
             </span>
             <span className="px-2.5 py-1 rounded-full font-bold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
-              Avoid: 7–10 AM
+              {isHi ? 'बचें: 7–10 AM' : 'Avoid: 7–10 AM'}
             </span>
             <span className="px-2.5 py-1 rounded-full font-bold bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
-              Purifier high: 9 PM–6 AM
+              {isHi ? 'प्यूरीफायर हाई: 9 PM–6 AM' : 'Purifier high: 9 PM–6 AM'}
             </span>
           </div>
         </div>
@@ -459,7 +477,7 @@ export function TodayScreen({
       {/* 5. Two Ledgers Section */}
       <section className="space-y-2.5">
         <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--muted)]">
-          Air Ledgers
+          {isHi ? 'वायु गुणवत्ता खाते (Air Ledgers)' : 'Air Ledgers'}
         </h2>
         <TwoLedger breathe={breatheData} give={giveData} />
       </section>
