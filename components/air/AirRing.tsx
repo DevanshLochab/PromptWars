@@ -29,7 +29,7 @@ export function getAqiMeta(aqi: number): AqiMeta {
       band: 'good',
       label: 'Good',
       icon: '🌿',
-      color: '#10b981',
+      color: '#10b981', // green
       strokeColor: 'stroke-emerald-500',
       textColor: 'text-emerald-600 dark:text-emerald-400',
       bgColor: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800',
@@ -41,11 +41,11 @@ export function getAqiMeta(aqi: number): AqiMeta {
       band: 'moderate',
       label: 'Moderate',
       icon: '🌤️',
-      color: '#f59e0b',
+      color: '#f59e0b', // yellow
       strokeColor: 'stroke-amber-500',
       textColor: 'text-amber-600 dark:text-amber-400',
       bgColor: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800',
-      advice: 'Acceptable air quality. Unusually sensitive individuals should limit prolonged outdoor exertion.',
+      advice: 'Acceptable air quality. Sensitive individuals should take care.',
     };
   }
   if (aqi <= 150) {
@@ -53,11 +53,11 @@ export function getAqiMeta(aqi: number): AqiMeta {
       band: 'unhealthy-sensitive',
       label: 'Unhealthy for Sensitive Groups',
       icon: '😷',
-      color: '#f97316',
+      color: '#f97316', // orange
       strokeColor: 'stroke-orange-500',
       textColor: 'text-orange-600 dark:text-orange-400',
       bgColor: 'bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-800',
-      advice: 'Children, seniors, and people with respiratory or heart disease should reduce outdoor exertion.',
+      advice: 'Children, seniors, and asthmatics should reduce outdoor exertion.',
     };
   }
   if (aqi <= 200) {
@@ -65,11 +65,11 @@ export function getAqiMeta(aqi: number): AqiMeta {
       band: 'unhealthy',
       label: 'Unhealthy',
       icon: '⚠️',
-      color: '#ef4444',
+      color: '#ef4444', // red
       strokeColor: 'stroke-red-500',
       textColor: 'text-red-600 dark:text-red-400',
       bgColor: 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800',
-      advice: 'Everyone may begin to experience health effects. Wear N95 outdoors; keep windows latched.',
+      advice: 'Health alert for all. Wear an N95 respirator outdoors.',
     };
   }
   if (aqi <= 300) {
@@ -77,22 +77,22 @@ export function getAqiMeta(aqi: number): AqiMeta {
       band: 'very-unhealthy',
       label: 'Very Unhealthy',
       icon: '🚨',
-      color: '#8b5cf6',
+      color: '#8b5cf6', // purple
       strokeColor: 'stroke-purple-500',
       textColor: 'text-purple-600 dark:text-purple-400',
       bgColor: 'bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800',
-      advice: 'Health alert: serious risk for all household members. Run air purifiers on high.',
+      advice: 'Serious health alert. Run air purification continuously.',
     };
   }
   return {
     band: 'hazardous',
-    label: 'Hazardous (Emergency)',
+    label: 'Hazardous',
     icon: '☠️',
-    color: '#7f1d1d',
+    color: '#7f1d1d', // maroon
     strokeColor: 'stroke-rose-900 dark:stroke-rose-700',
     textColor: 'text-rose-900 dark:text-rose-400',
     bgColor: 'bg-rose-50 dark:bg-rose-950/50 border-rose-300 dark:border-rose-900',
-    advice: 'Health warnings of emergency conditions. Remain indoors and run air purification continuously.',
+    advice: 'Emergency conditions. Remain indoors and run air purification on high.',
   };
 }
 
@@ -156,43 +156,39 @@ export function AirRing({
           />
         </svg>
 
-        {/* Center Content */}
+        {/* Center Content: Big AQI number + "US AQI" tiny below + band label. No raw µg/m³ inside the ring */}
         <div className="absolute inset-0 flex flex-col items-center justify-center px-2">
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
-            <span aria-hidden="true">{meta.icon}</span>
-            <span>{isIndoor ? 'Indoor AQI' : label || 'US AQI'}</span>
-          </span>
-
           <span
-            className={`text-4xl sm:text-5xl font-black tracking-tight my-0.5 ${meta.textColor}`}
-          >
-            {aqi}
-          </span>
-
-          <span
-            className="text-[11px] font-bold px-2 py-0.5 rounded-full max-w-[140px] truncate"
+            className="text-[11px] font-bold px-2.5 py-0.5 rounded-full max-w-[150px] truncate mb-0.5"
             style={{ backgroundColor: `${meta.color}18`, color: meta.color }}
           >
             {meta.label}
           </span>
+
+          <span
+            className="text-4xl sm:text-5xl font-black tracking-tight my-0.5"
+            style={{ color: meta.color }}
+          >
+            {aqi}
+          </span>
+
+          <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+            {isIndoor ? 'Indoor AQI' : label || 'US AQI'}
+          </span>
         </div>
       </div>
 
-      {/* Below Ring: PM2.5 metric & WHO guideline multiplier */}
-      <div className="mt-4 space-y-1">
-        <div className="flex items-center justify-center gap-1.5 text-sm font-bold text-slate-800 dark:text-slate-200">
-          <span>PM2.5:</span>
-          <span className="text-base font-extrabold">{pm25} µg/m³</span>
-          <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400">
-            (estimate*)
-          </span>
-        </div>
-
-        <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+      {/* Below Ring: PM2.5 metric & WHO guideline multiplier (small and muted) */}
+      <div className="mt-4 space-y-1.5 flex flex-col items-center">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
           <span className="text-rose-600 dark:text-rose-400 font-bold">
             ×{multiple}
           </span>
-          <span>WHO 24h health guideline (15 µg/m³)</span>
+          <span>WHO daily guideline</span>
+        </div>
+
+        <div className="text-xs text-slate-500 dark:text-slate-400">
+          PM2.5: {pm25} µg/m³
         </div>
       </div>
     </div>
