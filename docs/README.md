@@ -50,6 +50,36 @@ flowchart TD
 
 ---
 
+## 2.1 UI/UX Architecture & Screens (Redesign v2)
+
+The presentation layer of Saans has been rebuilt from first principles around a single North Star: **A tired parent at 7 AM, using one thumb, must understand in 5 seconds: (1) how bad the air is, (2) what to do today, (3) for whom.**
+
+### Key Design System Enhancements
+- **Design Tokens**: Standardized 4px grid spacing, WCAG AA contrast compliance in light (`#F6F4EF`) and dark mode (`#0F1514`), 44px minimum tap targets.
+- **Responsive AppShell**: 
+  - Mobile (<1024px): Safe-area aware top header + bottom navigation bar.
+  - Desktop (≥1024px): 3-column layout (280px left sidebar + 720px max-width centered content + 280px sticky right rail for live AQI & best times).
+- **Zero Jargon**: Replaced technical terminology with plain language:
+  - "Compare your choices" (formerly Tradeoff Sandbox)
+  - "Our neighbourhood's air" (formerly Airshed Hub)
+  - "What you breathe (estimate)" (formerly Exposure Estimate*)
+  - "US AQI" explicitly labelled next to every AQI reading with WHO 24h multiplier (`×11 WHO guideline`).
+- **3-Step Streamlined Onboarding**: Collapsed from 7 tedious steps into 3 progressive cards with large choice chips, smart defaults, and full bottom-nav suppression during setup.
+- **Visual Evidence & Screenshots**:
+  - Full automated Playwright test suite capturing all 5 screens across 5 standard viewport resolutions (`360x740`, `390x844`, `768x1024`, `1280x800`, `1440x900`), light & dark modes, and English & Hindi localization (stored in `docs/screens/`).
+
+| Screen | Mobile View (390×844 Light) | Desktop View (1440×900) | Dark Mode (390×844 Dark) | Hindi Localization |
+|---|---|---|---|---|
+| **Welcome** | `docs/screens/welcome_390x844_light.png` | `docs/screens/welcome_1440x900_light.png` | `docs/screens/welcome_390x844_dark.png` | Native Devanagari typography |
+| **Onboarding** | `docs/screens/onboarding_step1_390x844_light.png` | `docs/screens/onboarding_step1_1440x900_light.png` | `docs/screens/onboarding_step1_390x844_dark.png` | 3-step rapid wizard |
+| **Today** | `docs/screens/today_390x844_light.png` | `docs/screens/today_1440x900_light.png` | `docs/screens/today_390x844_dark.png` | `docs/screens/today_390x844_hindi.png` |
+| **Plan** | `docs/screens/plan_390x844_light.png` | `docs/screens/plan_1440x900_light.png` | `docs/screens/plan_390x844_dark.png` | `docs/screens/plan_390x844_hindi.png` |
+| **Compare** | `docs/screens/compare_390x844_light.png` | `docs/screens/compare_1440x900_light.png` | `docs/screens/compare_390x844_dark.png` | `docs/screens/compare_390x844_hindi.png` |
+| **Community** | `docs/screens/community_390x844_light.png` | `docs/screens/community_1440x900_light.png` | `docs/screens/community_390x844_dark.png` | `docs/screens/community_390x844_hindi.png` |
+| **Ask (Chat)** | `docs/screens/ask_390x844_light.png` | `docs/screens/ask_1440x900_light.png` | `docs/screens/ask_390x844_dark.png` | `docs/screens/ask_390x844_hindi.png` |
+
+---
+
 ## 2. Gemini Feature Map
 
 The spec requires full explanation of Gemini capabilities: structured output, function calling, Search grounding, Maps grounding, vision, multilingual, and stretch Live/TTS.
