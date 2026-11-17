@@ -1,3 +1,4 @@
+// Step 5: Compare screen redesign (Compare your choices, scenario picker grid, verdict card, side-by-side receipts)
 'use client';
 
 import React, { useMemo, useState } from 'react';
