@@ -47,24 +47,37 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ServiceWorkerRegister />
           <SettingsDrawer />
 
-          {/* Mobile/Tablet: header + scrollable main + bottom nav */}
-          <div className="lg:hidden flex flex-col min-h-dvh">
-            <Header />
-            <main className="flex-1 overflow-y-auto pb-[calc(var(--nav-h)+env(safe-area-inset-bottom,0px))] px-4 pt-2">
-              {children}
-            </main>
-            <BottomNav />
-          </div>
+          {/* Unified responsive layout: exactly one <main> landmark and single {children} render */}
+          <div className="min-h-dvh flex flex-col lg:flex-row">
+            {/* Desktop Sidebar (hidden on mobile) */}
+            <div className="hidden lg:block shrink-0">
+              <SidebarNav />
+            </div>
 
-          {/* Desktop: sidebar + main + right rail */}
-          <div className="hidden lg:flex min-h-dvh">
-            <SidebarNav />
-            <div className="flex-1 flex justify-center">
-              <main className="w-full max-w-[720px] px-6 py-6">
+            {/* Mobile Header (hidden on desktop) */}
+            <div className="lg:hidden shrink-0">
+              <Header />
+            </div>
+
+            {/* Single Unified Main Landmark */}
+            <div className="flex-1 flex justify-center w-full min-w-0">
+              <main
+                id="main-content"
+                className="w-full max-w-[720px] px-4 pt-2 pb-[calc(var(--nav-h)+env(safe-area-inset-bottom,0px)+1rem)] lg:px-6 lg:py-6 lg:pb-6 overflow-y-auto"
+              >
                 {children}
               </main>
             </div>
-            <RightRail />
+
+            {/* Desktop Right Rail (hidden on mobile) */}
+            <div className="hidden lg:block shrink-0">
+              <RightRail />
+            </div>
+
+            {/* Mobile Bottom Nav (hidden on desktop) */}
+            <div className="lg:hidden shrink-0">
+              <BottomNav />
+            </div>
           </div>
         </ProfileProvider>
       </body>

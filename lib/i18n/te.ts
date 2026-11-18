@@ -217,7 +217,7 @@ export const te: Record<string, string> = {
   'today.top_action': 'నేటి అత్యంత ప్రభావవంతమైన చర్య',
   'today.ranked_highest': 'అత్యధిక ప్రభావం',
   'today.best_times': 'నేటి ఉత్తమ సమయాలు',
-  'today.open_window': 'కిటికీ తెరవండి: {start}–{end} PM',
+  'today.open_window': 'కిటికీ తెరవండి: {start}–{end}',
   'today.avoid_time': 'నివారించండి: 7–10 AM',
   'today.purifier_high': 'ప్యూరిఫైయర్ హై: 9 PM–6 AM',
   'today.ledgers_title': 'గాలి నాణ్యత ఖాతాలు (Air Ledgers)',

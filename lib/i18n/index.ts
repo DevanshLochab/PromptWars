@@ -15,6 +15,7 @@ import { kn } from './kn';
 import { pa } from './pa';
 import { useProfile } from '@/lib/store/ProfileProvider';
 import { Language } from '@/lib/schemas';
+import actionsData from '@/data/actions.json';
 
 export type { Language };
 
@@ -59,7 +60,19 @@ export function t(
   params?: Record<string, string | number>
 ): string {
   const catalogue = catalogues[lang] || catalogues.en;
-  let text = catalogue[key] || catalogues.en[key] || key;
+  let text = catalogue[key] || catalogues.en[key];
+
+  if (!text) {
+    if (key.startsWith('actions.') && key.endsWith('.title')) {
+      const actionId = key.slice(8, -6);
+      const action = (actionsData as Array<{ id: string; title: string }>).find((a) => a.id === actionId);
+      if (action) text = action.title;
+    }
+  }
+
+  if (!text) {
+    text = key;
+  }
 
   if (params) {
     for (const [k, v] of Object.entries(params)) {

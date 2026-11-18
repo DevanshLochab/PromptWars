@@ -217,7 +217,7 @@ export const gu: Record<string, string> = {
   'today.top_action': 'આજનું સૌથી અસરકારક પગલું',
   'today.ranked_highest': 'સર્વોચ્ચ પ્રભાવ',
   'today.best_times': 'આજનો શ્રેષ્ઠ સમય',
-  'today.open_window': 'બારી ખોલો: {start}–{end} PM',
+  'today.open_window': 'બારી ખોલો: {start}–{end}',
   'today.avoid_time': 'ટાળો: 7–10 AM',
   'today.purifier_high': 'પ્યુરિફાયર હાઇ: 9 PM–6 AM',
   'today.ledgers_title': 'હવાના ખાતા (Air Ledgers)',

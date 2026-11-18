@@ -224,12 +224,14 @@ export function generateFallbackPlan(
         ? EN_ACTION_TEMPLATES
         : {};
 
-  // Determine severity tier based on peak AQI / PM2.5
-  const peakPm25 = Math.max(...airData.map((h) => h.pm25));
+  // Determine severity tier based on peak AQI / PM2.5 (aligned with CPCB and EPA AQI)
+  const peakPm25 = Math.max(...airData.map((h) => h.pm25 || 0));
+  const peakAqi = Math.max(...airData.map((h) => h.usAqi || 0));
   let severityTier = 'Moderate';
-  if (peakPm25 > 350) severityTier = 'Severe Smog Emergency';
-  else if (peakPm25 > 250) severityTier = 'Very Poor Air';
-  else if (peakPm25 > 150) severityTier = 'Poor Air Quality';
+  if (peakAqi > 300 || peakPm25 > 250) severityTier = 'Severe Smog Emergency';
+  else if (peakAqi > 200 || peakPm25 > 150) severityTier = 'Very Poor Air';
+  else if (peakAqi > 100 || peakPm25 > 60) severityTier = 'Poor Air Quality';
+  else if (peakAqi <= 50 && peakPm25 <= 30) severityTier = 'Good Air Quality';
 
   // Localized Fallback Headlines
   const fallbackHeadlines: Record<Language, string> = {

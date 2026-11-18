@@ -241,7 +241,7 @@ export const bn: Record<string, string> = {
   'today.top_action': 'আজকের সবচেয়ে কার্যকর পদক্ষেপ',
   'today.ranked_highest': 'সর্বোচ্চ প্রভাব',
   'today.best_times': 'আজকের সেরা সময়',
-  'today.open_window': 'জানালা খুলুন: {start}–{end} PM',
+  'today.open_window': 'জানালা খুলুন: {start}–{end}',
   'today.avoid_time': 'এড়িয়ে চলুন: 7–10 AM',
   'today.purifier_high': 'পিউরিফায়ার হাই: 9 PM–6 AM',
   'today.ledgers_title': 'বায়ুমান হিসাব (Air Ledgers)',

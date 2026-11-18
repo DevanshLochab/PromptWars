@@ -217,7 +217,7 @@ export const ta: Record<string, string> = {
   'today.top_action': 'இன்றைய மிகச் சிறந்த நடவடிக்கை',
   'today.ranked_highest': 'அதிகபட்ச பலன்',
   'today.best_times': 'இன்றைய சிறந்த நேரங்கள்',
-  'today.open_window': 'ஜன்னலைத் திறக்கவும்: {start}–{end} PM',
+  'today.open_window': 'ஜன்னலைத் திறக்கவும்: {start}–{end}',
   'today.avoid_time': 'தவிர்க்கவும்: 7–10 AM',
   'today.purifier_high': 'சுத்திகரிப்பான் அதிகம்: 9 PM–6 AM',
   'today.ledgers_title': 'காற்றுப் பதிவேடுகள் (Air Ledgers)',

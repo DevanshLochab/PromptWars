@@ -411,10 +411,22 @@ Please regenerate the JSON plan fixing these violations. Use reference tokens [[
           if (!valResult.valid) {
             console.warn('[DailyPlan] Retry still contained stray numbers; cascading to backup AI models.');
           } else {
-            return substitutePlanTokens(parsedPlan, receiptsLookup);
+            const finalPlan = substitutePlanTokens(parsedPlan, receiptsLookup);
+            const peakAqi = airData && airData.length > 0 ? Math.max(...airData.map((h) => h.usAqi || 0)) : 0;
+            const peakPm25 = airData && airData.length > 0 ? Math.max(...airData.map((h) => h.pm25 || 0)) : 0;
+            if ((peakAqi > 300 || peakPm25 > 250) && (finalPlan.severityTier.toLowerCase().includes('moderate') || finalPlan.severityTier.toLowerCase().includes('good'))) {
+              finalPlan.severityTier = 'Severe Smog Emergency';
+            }
+            return finalPlan;
           }
         } else {
-          return substitutePlanTokens(parsedPlan, receiptsLookup);
+          const finalPlan = substitutePlanTokens(parsedPlan, receiptsLookup);
+          const peakAqi = airData && airData.length > 0 ? Math.max(...airData.map((h) => h.usAqi || 0)) : 0;
+          const peakPm25 = airData && airData.length > 0 ? Math.max(...airData.map((h) => h.pm25 || 0)) : 0;
+          if ((peakAqi > 300 || peakPm25 > 250) && (finalPlan.severityTier.toLowerCase().includes('moderate') || finalPlan.severityTier.toLowerCase().includes('good'))) {
+            finalPlan.severityTier = 'Severe Smog Emergency';
+          }
+          return finalPlan;
         }
       } else {
         const directText = turn1Response.text || '';
@@ -477,7 +489,13 @@ Output the final Plan JSON matching PlanSchema. Every numeric value must be expr
         language,
       });
 
-      return substitutePlanTokens(cascadePlan, receiptsLookup);
+      const finalCascade = substitutePlanTokens(cascadePlan, receiptsLookup);
+      const peakAqi = airData && airData.length > 0 ? Math.max(...airData.map((h) => h.usAqi || 0)) : 0;
+      const peakPm25 = airData && airData.length > 0 ? Math.max(...airData.map((h) => h.pm25 || 0)) : 0;
+      if ((peakAqi > 300 || peakPm25 > 250) && (finalCascade.severityTier.toLowerCase().includes('moderate') || finalCascade.severityTier.toLowerCase().includes('good'))) {
+        finalCascade.severityTier = 'Severe Smog Emergency';
+      }
+      return finalCascade;
     } catch (cascadeErr) {
       console.warn('[DailyPlan] Backup AI cascade failed, falling back to deterministic plan:', (cascadeErr as Error)?.message || cascadeErr);
     }

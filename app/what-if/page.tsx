@@ -163,9 +163,24 @@ export default function WhatIfPage() {
       ],
     };
 
+    const cityNameLower = (activeProfile.location?.placeName || '').toLowerCase();
+    const transitName = cityNameLower.includes('mumbai')
+      ? (isHi ? 'मुंबई मेट्रो / उपनगरीय रेल' : 'Mumbai Metro / Suburban Rail')
+      : cityNameLower.includes('bengaluru') || cityNameLower.includes('bangalore')
+        ? (isHi ? 'नम्मा मेट्रो' : 'Namma Metro Transit')
+        : cityNameLower.includes('pune')
+          ? (isHi ? 'पुणे मेट्रो' : 'Pune Metro Transit')
+          : cityNameLower.includes('kolkata')
+            ? (isHi ? 'कोलकाता मेट्रो' : 'Kolkata Metro')
+            : cityNameLower.includes('hyderabad')
+              ? (isHi ? 'हैदराबाद मेट्रो रेल' : 'Hyderabad Metro Rail')
+              : cityNameLower.includes('chennai')
+                ? (isHi ? 'चेन्नई मेट्रो रेल' : 'Chennai Metro Rail')
+                : (isHi ? 'दिल्ली मेट्रो रेल' : 'Delhi Metro Transit');
+
     const carVsMetroScenario: ComparisonPreset = {
       key: 'car-vs-metro',
-      title: isHi ? '🚗 कार बनाम 🚇 दिल्ली मेट्रो' : '🚗 Solo Car vs 🚇 Metro Transit',
+      title: isHi ? `🚗 कार बनाम 🚇 ${transitName}` : `🚗 Solo Car vs 🚇 ${transitName}`,
       shortTitle: isHi ? 'कार बनाम मेट्रो' : 'Car vs Metro',
       scenarioA: {
         id: 'solo_car',
@@ -183,11 +198,11 @@ export default function WhatIfPage() {
       },
       scenarioB: {
         id: 'metro_transit',
-        name: isHi ? 'परिदृश्य बी: दिल्ली मेट्रो रेल' : 'Scenario B: Delhi Metro Transit',
+        name: isHi ? `परिदृश्य बी: ${transitName}` : `Scenario B: ${transitName}`,
         category: isHi ? 'यात्रा' : 'Commute',
         description: isHi
-          ? `${roundTripKm} किमी की दैनिक यात्रा उच्च गति भूमिगत मेट्रो रेल से, जहां स्टेशन व कोच में एयर फिल्ट्रेशन उपलब्ध है।`
-          : `${roundTripKm} km daily commute on high-speed underground Metro rail with station & coach filtration.`,
+          ? `${roundTripKm} किमी की दैनिक यात्रा उच्च गति भूमिगत ${transitName} से, जहां स्टेशन व कोच में एयर फिल्ट्रेशन उपलब्ध है।`
+          : `${roundTripKm} km daily commute on high-speed ${transitName} with station & coach filtration.`,
         costLabel: isHi
           ? `₹${metroDailyCost} / दिन (स्मार्ट कार्ड)`
           : `₹${metroDailyCost} / day (Metro Smart Card)`,
@@ -642,11 +657,11 @@ export default function WhatIfPage() {
     );
     return {
       icon: ShieldCheck,
-      sentence: `Wearing an N95 respirator costs just ₹8/day and you breathe ${cleanerPct}% cleaner with certified particle filtration.`,
+      sentence: `Wearing an N95 respirator costs ₹8/day and you breathe ${cleanerPct}% cleaner with certified particle filtration.`,
       breatheVal: `${cleanerPct}% cleaner`,
       breatheSub: 'You breathe',
       saveVal: '₹8 / day',
-      saveSub: 'You save',
+      saveSub: 'Daily cost',
     };
   }, [activePresetKey, deltaCost, scenA, scenB]);
 
@@ -966,7 +981,12 @@ export default function WhatIfPage() {
                         {scenA.receipt.breathe.after} µg/m³
                       </td>
                       <td className="py-2.5 pl-3 font-extrabold text-emerald-600 dark:text-emerald-400">
-                        {scenB.receipt.breathe.after} µg/m³ ({scenB.receipt.breathe.deltaPct}%)
+                        {scenB.receipt.breathe.after} µg/m³
+                        {scenA.receipt.breathe.after > scenB.receipt.breathe.after && (
+                          <span className="ml-1 text-[11px] font-bold">
+                            (-{Math.round(((scenA.receipt.breathe.after - scenB.receipt.breathe.after) / Math.max(1, scenA.receipt.breathe.after)) * 100)}% vs Option A)
+                          </span>
+                        )}
                       </td>
                     </tr>
                     <tr>
@@ -974,12 +994,20 @@ export default function WhatIfPage() {
                         {t('whatif.metric_airshed') || 'Airshed Emissions'}
                       </td>
                       <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
-                        {language !== 'en' ? 'શહેરી/ઇન્ડોર પ્રદૂષણ વધારે છે' : 'Adds urban/indoor emissions'}
+                        {activePresetKey === 'car-vs-metro'
+                          ? (language !== 'en' ? 'ટેલપાઇપ સ્મોગ વધારે છે (~145g/દિન)' : 'Adds tailpipe emissions (~145g/day)')
+                          : activePresetKey === 'heater-vs-layers'
+                            ? (language !== 'en' ? 'ઝેરી ઇન્ડોર ધુમાડો અને CO ઉત્પન્ન કરે છે' : 'Generates toxic indoor smoke & CO')
+                            : (language !== 'en' ? 'વ્યક્તિગત બેઝલાઇન એક્સપોઝર' : 'Personal baseline exposure')}
                       </td>
                       <td className="py-2.5 pl-3 font-semibold text-emerald-600 dark:text-emerald-400">
-                        {scenB.receipt.give?.pm25_g
-                          ? `${scenB.receipt.give.pm25_g}g PM2.5 avoided / day`
-                          : 'Avoids combustion/tailpipe smoke'}
+                        {activePresetKey === 'car-vs-metro'
+                          ? (scenB.receipt.give?.pm25_g
+                              ? `${scenB.receipt.give.pm25_g}g PM2.5 avoided / day`
+                              : 'Avoids combustion/tailpipe smoke')
+                          : activePresetKey === 'heater-vs-layers'
+                            ? (language !== 'en' ? 'શૂન્ય ઇન્ડોર ધુમાડો & 0 ppm CO' : 'Zero indoor smoke & 0 ppm CO')
+                            : (language !== 'en' ? 'વ્યક્તિગત ફિલ્ટરેશન (એરશેડ પર કોઈ અસર નથી)' : 'Personal filtration only (no airshed emissions)')}
                       </td>
                     </tr>
                     <tr>

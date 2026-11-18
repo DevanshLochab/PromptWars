@@ -5,7 +5,7 @@ import { Copy, Check, ExternalLink } from 'lucide-react';
 import { EvidenceBadge, EvidenceGrade } from '@/components/receipt/EvidenceBadge';
 import { useTranslation } from '@/lib/i18n';
 
-export type VerdictType = 'works' | 'myth' | 'partly' | 'depends';
+export type VerdictType = 'works' | 'myth' | 'partly' | 'depends' | 'medical';
 
 export interface MythCitation {
   title: string;
@@ -95,10 +95,26 @@ export function MythCheckCard({
   const effectiveIsMyth = isMyth ?? item?.isMyth;
   const effectiveDisclaimer = medicalDisclaimer ?? item?.medicalDisclaimer;
 
+  // Detect whether this inquiry is a clinical / medical guidance question
+  const combinedText = `${effectiveClaim || ''} ${effectiveShortAnswer || ''} ${effectiveAnswer || ''}`.toLowerCase();
+  const isMedicalQuery =
+    combinedText.includes('azithromycin') ||
+    combinedText.includes('antibiotic') ||
+    combinedText.includes('paracetamol') ||
+    combinedText.includes('medication') ||
+    combinedText.includes('cough syrup') ||
+    combinedText.includes('inhaler') ||
+    combinedText.includes('dosage') ||
+    combinedText.includes('prescription') ||
+    combinedText.includes('take 500mg') ||
+    (Boolean(effectiveDisclaimer) && combinedText.includes('consult a clinician'));
+
   // Determine verdict
   let effectiveVerdict: VerdictType;
   if (verdict ?? item?.verdict) {
     effectiveVerdict = (verdict ?? item?.verdict)!;
+  } else if (isMedicalQuery) {
+    effectiveVerdict = 'medical';
   } else if (effectiveIsMyth === true || effectiveGrade === 'D') {
     effectiveVerdict = 'myth';
   } else if (effectiveGrade === 'A') {
@@ -129,6 +145,11 @@ export function MythCheckCard({
       label: '? Depends',
       chipClass:
         'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+    },
+    medical: {
+      label: '⚕️ Medical Triage / Clinical Disclaimer',
+      chipClass:
+        'bg-indigo-50 text-indigo-900 border-indigo-200 dark:bg-indigo-950/70 dark:text-indigo-200 dark:border-indigo-800',
     },
   };
 
@@ -167,7 +188,7 @@ export function MythCheckCard({
           >
             {verdictStyles[effectiveVerdict].label}
           </span>
-          {effectiveGrade && (
+          {effectiveGrade && effectiveVerdict !== 'medical' && (
             <EvidenceBadge grade={effectiveGrade} showWhyInline={false} />
           )}
         </div>
@@ -194,7 +215,9 @@ export function MythCheckCard({
       {effectiveClaim && (
         <div className="space-y-1">
           <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
-            {t('ask.myth_badge') || 'Claim'}
+            {effectiveVerdict === 'medical'
+              ? 'Medical Inquiry'
+              : t('ask.myth_badge') || 'Claim'}
           </span>
           <h3
             className={`text-sm sm:text-base font-bold text-[var(--text)] leading-snug ${
@@ -222,18 +245,25 @@ export function MythCheckCard({
         </p>
       )}
 
-      {/* Green "Do this instead" card (if myth or partly true) */}
-      {effectiveWhatToDo && (effectiveVerdict === 'myth' || effectiveVerdict === 'partly') && (
-        <div className="p-3.5 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 space-y-1">
-          <div className="text-xs font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
-            <span>✅</span>
-            <span>{t('ask.myth_what_to_do') || 'Do this instead'}</span>
+      {/* Action / Next Steps card */}
+      {effectiveWhatToDo &&
+        (effectiveVerdict === 'myth' ||
+          effectiveVerdict === 'partly' ||
+          effectiveVerdict === 'medical') && (
+          <div className="p-3.5 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 space-y-1">
+            <div className="text-xs font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+              <span>{effectiveVerdict === 'medical' ? '⚕️' : '✅'}</span>
+              <span>
+                {effectiveVerdict === 'medical'
+                  ? 'Recommended Clinical Next Steps'
+                  : t('ask.myth_what_to_do') || 'Do this instead'}
+              </span>
+            </div>
+            <p className="text-xs text-emerald-800 dark:text-emerald-300 font-medium leading-relaxed">
+              {effectiveWhatToDo}
+            </p>
           </div>
-          <p className="text-xs text-emerald-800 dark:text-emerald-300 font-medium leading-relaxed">
-            {effectiveWhatToDo}
-          </p>
-        </div>
-      )}
+        )}
 
       {/* Medical Disclaimer notice (if relevant) */}
       {effectiveDisclaimer && (

@@ -69,7 +69,7 @@ ${actionLines}
 
 Best window: ${bestWindow} for fresh air
 Stay safe! 💨
-https://saans.local`;
+${typeof window !== 'undefined' ? window.location.origin : 'https://saans.app'}`;
   };
 
   const handleCopy = async () => {

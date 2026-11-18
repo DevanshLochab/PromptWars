@@ -102,10 +102,16 @@ export function CommunityDashboard() {
     communityCode === 'DELHI-GREEN-01' ||
     communityCode === 'NOIDA-SECTOR-62';
 
+  const [codeError, setCodeError] = useState<string | null>(null);
+
   const handleJoinCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputCode.trim()) return;
-    const clean = inputCode.trim().toUpperCase();
+    const clean = inputCode.trim().toUpperCase().replace(/[^A-Z0-9\-_]/g, '');
+    if (!clean || clean.length < 3) {
+      setCodeError('Code must be 3–20 alphanumeric characters (e.g. NOIDA-SEC-62).');
+      return;
+    }
+    setCodeError(null);
     await communityStore.joinCommunity(clean);
     setCommunityCode(clean);
     setIsChangingCode(false);
@@ -169,29 +175,42 @@ export function CommunityDashboard() {
               <span>{t('community.change_code') || 'Change society / code'}</span>
             </button>
           ) : (
-            <form onSubmit={handleJoinCode} className="flex items-center gap-2 self-start sm:self-auto">
-              <input
-                type="text"
-                value={inputCode}
-                onChange={(e) => setInputCode(e.target.value)}
-                placeholder={t('community.enter_code_placeholder') || 'e.g. A4B2 or SECTOR-15'}
-                className="p-1.5 px-3 text-xs rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] uppercase focus:ring-2 focus:ring-[var(--primary)]"
-              />
-              <button
-                type="submit"
-                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--primary)] text-[var(--on-primary)] hover:opacity-90 transition-opacity cursor-pointer"
-              >
-                {t('common.confirm') || 'Join'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsChangingCode(false)}
-                className="p-1.5 text-xs text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
-                title={t('common.cancel') || 'Cancel'}
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </form>
+            <div className="flex flex-col gap-1 self-start sm:self-auto">
+              <form onSubmit={handleJoinCode} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={inputCode}
+                  onChange={(e) => {
+                    setInputCode(e.target.value);
+                    if (codeError) setCodeError(null);
+                  }}
+                  placeholder={t('community.enter_code_placeholder') || 'e.g. A4B2 or SECTOR-15'}
+                  className="p-1.5 px-3 text-xs rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] uppercase focus:ring-2 focus:ring-[var(--primary)]"
+                />
+                <button
+                  type="submit"
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--primary)] text-[var(--on-primary)] hover:opacity-90 transition-opacity cursor-pointer"
+                >
+                  {t('common.confirm') || 'Join'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsChangingCode(false);
+                    setCodeError(null);
+                  }}
+                  className="p-1.5 text-xs text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
+                  title={t('common.cancel') || 'Cancel'}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </form>
+              {codeError && (
+                <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                  {codeError}
+                </p>
+              )}
+            </div>
           )}
         </div>
       </div>

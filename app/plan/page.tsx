@@ -192,7 +192,18 @@ export default function PlanPage() {
 
   // Severity chip configuration
   const getSeverityChipMeta = (tier: string) => {
-    const lower = tier.toLowerCase();
+    // Cross-check against live hourly air data to prevent semantic misclassification
+    const peakAqi = hourlyAir?.length ? Math.max(...hourlyAir.map((h) => h.usAqi || 0)) : 0;
+    const peakPm25 = hourlyAir?.length ? Math.max(...hourlyAir.map((h) => h.pm25 || 0)) : 0;
+    const effectiveTier =
+      (peakAqi > 300 || peakPm25 > 250) &&
+      (tier.toLowerCase().includes('moderate') || tier.toLowerCase().includes('good'))
+        ? 'Severe Smog Emergency'
+        : (peakAqi > 200 || peakPm25 > 150) && tier.toLowerCase().includes('good')
+          ? 'Very Poor Air'
+          : tier;
+
+    const lower = effectiveTier.toLowerCase();
     if (
       lower.includes('hazard') ||
       lower.includes('severe') ||
@@ -274,7 +285,7 @@ Best Ventilation Window:
 ${ventWindowStr} (15m cross-flush)
 
 Tailored for ${effectiveProfile?.location.placeName || 'Family'} · Saans
-https://saans.local`;
+${typeof window !== 'undefined' ? window.location.origin : 'https://saans.app'}`;
 
   const handleCopyShare = async () => {
     try {

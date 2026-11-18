@@ -226,7 +226,7 @@ export const mr: Record<string, string> = {
   'today.top_action': 'आजचा सर्वात प्रभावी उपाय',
   'today.ranked_highest': 'सर्वोच्च परिणाम',
   'today.best_times': 'आजची सर्वोत्तम वेळ',
-  'today.open_window': 'खिडकी उघडा: {start}–{end} PM',
+  'today.open_window': 'खिडकी उघडा: {start}–{end}',
   'today.avoid_time': 'टाळा: 7–10 AM',
   'today.purifier_high': 'प्युरिफायर हाय: 9 PM–6 AM',
   'today.ledgers_title': 'हवेची खाती (Air Ledgers)',

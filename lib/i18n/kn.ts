@@ -217,7 +217,7 @@ export const kn: Record<string, string> = {
   'today.top_action': 'ಇಂದಿನ ಅತ್ಯಂತ ಪರಿಣಾಮಕಾರಿ ಕ್ರಮ',
   'today.ranked_highest': 'ಅತ್ಯಧಿಕ ಪ್ರಭಾವ',
   'today.best_times': 'ಇಂದಿನ ಅತ್ಯುತ್ತಮ ಸಮಯ',
-  'today.open_window': 'ಕಿಟಕಿ ತೆರೆಯಿರಿ: {start}–{end} PM',
+  'today.open_window': 'ಕಿಟಕಿ ತೆರೆಯಿರಿ: {start}–{end}',
   'today.avoid_time': 'ತಪ್ಪಿಸಿ: 7–10 AM',
   'today.purifier_high': 'ಪ್ಯೂರಿಫೈಯರ್ ಹೈ: 9 PM–6 AM',
   'today.ledgers_title': 'ವಾಯು ಖಾತೆಗಳು (Air Ledgers)',

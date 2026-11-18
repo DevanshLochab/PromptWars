@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { HotspotReport as HotspotReportType, communityStore } from '@/lib/store/communityStore';
 import { useTranslation } from '@/lib/i18n';
+import { useProfile } from '@/lib/store/ProfileProvider';
 import {
   Camera,
   ShieldCheck,
@@ -27,6 +28,7 @@ export function HotspotReport({
   onReportSubmitted,
 }: HotspotReportProps) {
   const { t } = useTranslation();
+  const { profile } = useProfile();
 
   // 3-step wizard: 1 = Photo, 2 = AI Review, 3 = Send
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -37,9 +39,24 @@ export function HotspotReport({
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
   const [privacyConfirmed, setPrivacyConfirmed] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
+
+  // Dynamic civic authority resolution based on user's geographic profile
+  const placeNameLower = (profile?.location?.placeName || '').toLowerCase();
+  const targetChannelName = placeNameLower.includes('mumbai') || placeNameLower.includes('pune')
+    ? 'CPCB Sameer / BMC 24x7 App (Helpline 1916)'
+    : placeNameLower.includes('bengaluru') || placeNameLower.includes('bangalore')
+      ? 'CPCB Sameer / BBMP Sahaaya Portal'
+      : placeNameLower.includes('hyderabad')
+        ? 'CPCB Sameer / GHMC Citizen App'
+        : placeNameLower.includes('kolkata')
+          ? 'CPCB Sameer / KMC Citizen Grievance'
+          : placeNameLower.includes('chennai')
+            ? 'CPCB Sameer / Greater Chennai Corp (GCC 1913)'
+            : 'CPCB Sameer / MCD 311 / Green Delhi App';
 
   // Handle image upload and base64 preview
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,6 +72,11 @@ export function HotspotReport({
 
   const handleNextToReview = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!location.trim() || location.trim().length < 3) {
+      setLocationError('Please provide a specific street name, colony gate, or landmark (min 3 chars).');
+      return;
+    }
+    setLocationError(null);
     setCurrentStep(2);
   };
 
@@ -75,7 +97,7 @@ export function HotspotReport({
         notes,
         photoUrl: photoPreview || undefined,
         timestamp: new Date().toISOString(),
-        contactChannel: 'CPCB Sameer / MCD 311 / Green Delhi App',
+        contactChannel: targetChannelName,
         status: 'submitted',
       });
 
@@ -292,16 +314,27 @@ export function HotspotReport({
               {/* Location & Notes */}
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[var(--text)]">
-                    {t('hotspot.location')}
+                  <label className="text-xs font-bold text-[var(--text)] flex items-center justify-between">
+                    <span>{t('hotspot.location')}</span>
+                    <span className="text-[10px] text-rose-500 font-normal">*Required</span>
                   </label>
                   <input
                     type="text"
                     value={location}
-                    onChange={(e) => setLocation(e.target.value)}
+                    onChange={(e) => {
+                      setLocation(e.target.value);
+                      if (locationError) setLocationError(null);
+                    }}
                     placeholder={t('hotspot.location_placeholder')}
-                    className="w-full p-2.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--muted)]/60 focus:ring-2 focus:ring-[var(--primary)]"
+                    className={`w-full p-2.5 text-xs rounded-xl border bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--muted)]/60 focus:ring-2 focus:ring-[var(--primary)] ${
+                      locationError ? 'border-rose-500 ring-1 ring-rose-500' : 'border-[var(--border)]'
+                    }`}
                   />
+                  {locationError && (
+                    <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                      {locationError}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -430,13 +463,13 @@ export function HotspotReport({
                 </div>
 
                 <p className="text-xs text-[var(--muted)] leading-relaxed">
-                  This report will be logged anonymously in the <strong>{communityCode}</strong> airshed database and formatted for direct submission to the CPCB Sameer and MCD 311 municipal channels.
+                  This report will be logged anonymously in the <strong>{communityCode}</strong> airshed database and formatted for direct submission to {targetChannelName}.
                 </p>
 
                 <div className="p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)] text-[11px] text-[var(--muted)] space-y-1">
                   <div><strong>Location:</strong> {location || 'Near society perimeter'}</div>
                   <div><strong>Category:</strong> {sourceType.replace('_', ' ')}</div>
-                  <div><strong>Target Channel:</strong> CPCB Sameer / MCD 311 / Green Delhi App</div>
+                  <div><strong>Target Channel:</strong> {targetChannelName}</div>
                 </div>
               </div>
 

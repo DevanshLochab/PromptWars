@@ -10,6 +10,7 @@ export interface EvidenceBadgeProps {
   grade: EvidenceGrade;
   why?: string;
   showWhyInline?: boolean;
+  align?: 'left' | 'right';
   className?: string;
 }
 
@@ -17,6 +18,7 @@ export function EvidenceBadge({
   grade,
   why,
   showWhyInline = false,
+  align = 'right',
   className = '',
 }: EvidenceBadgeProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -91,7 +93,9 @@ export function EvidenceBadge({
       {isOpen && (
         <div
           role="tooltip"
-          className="absolute z-30 left-0 mt-1.5 w-64 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl text-left text-xs space-y-1.5 animate-in fade-in duration-150"
+          className={`absolute z-30 ${
+            align === 'left' ? 'left-0' : 'right-0'
+          } mt-1.5 w-64 max-w-[calc(100vw-2rem)] p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl text-left text-xs space-y-1.5 animate-in fade-in duration-150`}
         >
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
             <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1">

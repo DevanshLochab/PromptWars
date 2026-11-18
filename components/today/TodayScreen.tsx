@@ -54,10 +54,11 @@ function getBandMeta(aqi: number) {
 }
 
 function formatHour(h: number): string {
-  if (h === 0) return '12 AM';
-  if (h < 12) return `${h} AM`;
-  if (h === 12) return '12 PM';
-  return `${h - 12} PM`;
+  const hour24 = ((Math.round(h) % 24) + 24) % 24;
+  if (hour24 === 0) return '12 AM';
+  if (hour24 < 12) return `${hour24} AM`;
+  if (hour24 === 12) return '12 PM';
+  return `${hour24 - 12} PM`;
 }
 
 export function TodayScreen({
@@ -205,12 +206,15 @@ export function TodayScreen({
   );
 
   const ventWindows = useMemo(() => {
-    const computed = bestWindows(outdoorList, indoorResult.hourlyIndoor, {
+    // Only pass first 24 hours of data to prevent multi-day index offsets
+    const outdoor24 = outdoorList.slice(0, 24);
+    const indoor24 = indoorResult.hourlyIndoor.slice(0, 24);
+    const computed = bestWindows(outdoor24, indoor24, {
       durationH: 2,
       hasCombustionHeater: hasCombustionHeating,
     });
     if (computed.length > 0) {
-      return computed.map((w) => ({ start: w.startHour, end: w.endHour }));
+      return computed.map((w) => ({ start: w.startHour % 24, end: w.endHour % 24 }));
     }
     return [{ start: 13, end: 15 }];
   }, [outdoorList, indoorResult.hourlyIndoor, hasCombustionHeating]);
@@ -374,7 +378,7 @@ export function TodayScreen({
             </span>
           </div>
 
-          <div className="flex overflow-x-auto sm:flex-wrap gap-3 pb-2 scrollbar-hide">
+          <div className="flex overflow-x-auto sm:flex-wrap gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide snap-x">
             {members.map((member) => {
               const { statusChip, statusType, reason } = getMemberStatus(member);
               const initial = member.nickname.charAt(0).toUpperCase();
@@ -519,7 +523,9 @@ export function TodayScreen({
         {asthmaticMembers.length > 0 && (
           <SafetyBanner
             type="breathing_difficulty"
-            message={`${asthmaticMembers.map((m) => m.nickname).join(', ')} has an active asthma profile. Keep reliever inhalers nearby and minimize exertion during smog surges.`}
+            message={`${asthmaticMembers.map((m) => m.nickname).join(', ')} ${
+              asthmaticMembers.length > 1 ? 'have' : 'has'
+            } an active asthma profile. Keep reliever inhalers nearby and minimize exertion during smog surges.`}
           />
         )}
 

@@ -217,7 +217,7 @@ export const pa: Record<string, string> = {
   'today.top_action': 'ਅੱਜ ਦਾ ਸਭ ਤੋਂ ਅਸਰਦਾਰ ਕਦਮ',
   'today.ranked_highest': 'ਸਭ ਤੋਂ ਉੱਚਾ ਪ੍ਰਭਾਵ',
   'today.best_times': 'ਅੱਜ ਦੇ ਸਭ ਤੋਂ ਵਧੀਆ ਸਮੇਂ',
-  'today.open_window': 'ਖਿੜਕੀ ਖੋਲ੍ਹੋ: {start}–{end} PM',
+  'today.open_window': 'ਖਿੜਕੀ ਖੋਲ੍ਹੋ: {start}–{end}',
   'today.avoid_time': 'ਬਚੋ: 7–10 AM',
   'today.purifier_high': 'ਪਿਊਰੀਫਾਇਰ ਹਾਈ: 9 PM–6 AM',
   'today.ledgers_title': 'ਹਵਾ ਦੇ ਖਾਤੇ (Air Ledgers)',
