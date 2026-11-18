@@ -66,8 +66,7 @@ export function TodayScreen({
   className = '',
 }: TodayScreenProps) {
   const store = useProfile();
-  const { lang } = useTranslation();
-  const isHi = lang === 'hi';
+  const { lang, t } = useTranslation();
   const effectiveProfile =
     propProfile || store.profile || (store.isDemoMode ? getDefaultDemoProfile() : null);
   const cityName = effectiveProfile?.location?.placeName?.split(',')[0] || 'New Delhi';
@@ -250,45 +249,45 @@ export function TodayScreen({
       m.ageBand === 'toddler' ||
       m.ageBand === 'senior';
 
-    let statusChip = 'OK outdoors';
+    let statusChip = t('today.status_ok_outdoors') || 'OK outdoors';
     let statusType: 'danger' | 'warn' | 'success' = 'success';
-    let reason = 'Normal routine acceptable outdoors';
+    let reason = t('today.reason_acceptable') || 'Normal routine acceptable outdoors';
 
     if (isVulnerable) {
       if (aqi > 100) {
-        statusChip = isHi ? 'घर में रहें' : 'Stay in';
+        statusChip = t('today.status_stay_in') || 'Stay in';
         statusType = 'danger';
         if (m.conditions.includes('asthma')) {
-          reason = isHi ? 'सर्द धुंध के दौरान अस्थमा ट्रिगर्स चरम पर होते हैं' : 'Asthma triggers peak during cold smog spikes';
+          reason = t('today.reason_asthma') || 'Asthma triggers peak during cold smog spikes';
         } else if (m.ageBand === 'infant' || m.ageBand === 'toddler') {
-          reason = isHi ? 'विकसित हो रहे फेफड़ों को निरंतर छनी हुई हवा चाहिए' : 'Developing airways need continuous filtered air';
+          reason = t('today.reason_airways') || 'Developing airways need continuous filtered air';
         } else if (m.ageBand === 'senior') {
-          reason = isHi ? 'उच्च AQI में हृदय और फेफड़ों पर दबाव बढ़ जाता है' : 'Cardiovascular strain elevated in high AQI';
+          reason = t('today.reason_cardio') || 'Cardiovascular strain elevated in high AQI';
         } else {
-          reason = isHi ? 'स्वास्थ्य स्थिति के कारण इनडोर सुरक्षा आवश्यक है' : 'Pre-existing health condition requires indoor protection';
+          reason = t('today.reason_health') || 'Pre-existing health condition requires indoor protection';
         }
       } else if (aqi > 50) {
-        statusChip = isHi ? 'मास्क पहनें' : 'Mask up outside';
+        statusChip = t('today.status_mask_up') || 'Mask up outside';
         statusType = 'warn';
-        reason = isHi ? 'लंबे समय तक बाहर रहने पर N95 मास्क पहनें' : 'Wear fitted N95 mask for prolonged outdoor activities';
+        reason = t('today.reason_prolonged') || 'Wear fitted N95 mask for prolonged outdoor activities';
       }
     } else {
       if (aqi > 150) {
-        statusChip = isHi ? 'घर में रहें' : 'Stay in';
+        statusChip = t('today.status_stay_in') || 'Stay in';
         statusType = 'danger';
-        reason = isHi ? 'हवा जहरीली है — बाहरी मेहनत से बचें' : 'Unhealthy particulate levels — avoid outdoor exertion';
+        reason = t('today.reason_unhealthy') || 'Unhealthy particulate levels — avoid outdoor exertion';
       } else if (aqi > 100) {
-        statusChip = isHi ? 'मास्क पहनें' : 'Mask up outside';
+        statusChip = t('today.status_mask_up') || 'Mask up outside';
         statusType = 'warn';
         if (m.commute.mode === 'two_wheeler' || m.commute.mode === 'walk') {
-          reason = isHi ? 'सड़क पर आवागमन के दौरान अधिक जहरीले कण मिलते हैं' : 'High exposure along traffic corridor during commute';
+          reason = t('today.reason_traffic') || 'High exposure along traffic corridor during commute';
         } else {
-          reason = isHi ? 'बाहर रहने के दौरान N95 रेस्पिरेटर पहनें' : 'Wear an N95 respirator during outdoor hours';
+          reason = t('today.reason_respirator') || 'Wear an N95 respirator during outdoor hours';
         }
       } else {
-        statusChip = isHi ? 'बाहर सुरक्षित' : 'OK outdoors';
+        statusChip = t('today.status_ok_outdoors') || 'OK outdoors';
         statusType = 'success';
-        reason = isHi ? 'सामान्य आवाजाही के लिए हवा स्वीकार्य है' : 'Air quality acceptable for normal outdoor movement';
+        reason = t('today.reason_acceptable') || 'Air quality acceptable for normal outdoor movement';
       }
     }
 
@@ -307,14 +306,14 @@ export function TodayScreen({
       >
         <div className="flex items-center gap-1.5 mb-2">
           <span className="text-xs text-[var(--muted)] font-semibold uppercase tracking-wider">
-            {isHi ? 'US AQI · १२ मिनट पहले अपडेट' : 'US AQI · updated 12 min ago'}
+            {t('today.updated_min_ago') || 'US AQI · updated 12 min ago'}
           </span>
           <span className="text-xs text-[var(--muted)]">·</span>
           <button
             type="button"
             onClick={store.openSettings}
             className="inline-flex items-center gap-1 text-xs font-bold text-[var(--primary)] hover:underline cursor-pointer"
-            title="Change City"
+            title={t('settings.location_change')}
           >
             <MapPin size={12} />
             <span>{cityName}</span>
@@ -334,14 +333,24 @@ export function TodayScreen({
           className="text-xl sm:text-2xl font-extrabold tracking-tight mt-1"
           style={{ color: bandColor }}
         >
-          {isHi ? HI_BANDS[band] || band : band}
+          {t(
+            band === 'Good'
+              ? 'aqi.good'
+              : band === 'Moderate'
+                ? 'aqi.moderate'
+                : band === 'Unhealthy'
+                  ? 'aqi.unhealthy'
+                  : band === 'Hazardous'
+                    ? 'aqi.hazardous'
+                    : band === 'Very Unhealthy'
+                      ? 'aqi.severe'
+                      : 'aqi.poor'
+          )}
         </div>
 
         {/* Conversion vs WHO guideline */}
         <p className="text-sm sm:text-base font-semibold text-[var(--text)] mt-2">
-          {isHi
-            ? `WHO दैनिक मानक से लगभग ${whoMultiple}× गुना`
-            : `About ${whoMultiple}× the WHO daily guideline`}
+          {t('aqi.who_multiple', { multiple: whoMultiple })}
         </p>
 
         {/* PM2.5 small and muted */}
@@ -355,10 +364,13 @@ export function TodayScreen({
         <section className="space-y-2.5">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--muted)]">
-              {isHi ? 'परिवार के सदस्यों की स्थिति' : 'Family Member Status'}
+              {t('today.family_status') || 'Family Member Status'}
             </h2>
             <span className="text-xs text-[var(--muted)]">
-              {isHi ? `${members.length} सदस्य` : `${members.length} ${members.length === 1 ? 'member' : 'members'}`}
+              {t('today.members_count', {
+                count: members.length,
+                suffix: members.length === 1 ? 'member' : 'members',
+              }) || `${members.length} members`}
             </span>
           </div>
 
@@ -413,10 +425,10 @@ export function TodayScreen({
         <section className="space-y-2.5">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-extrabold text-[var(--text)] tracking-tight">
-              {isHi ? 'आज का सबसे असरदार कदम' : 'Your top action today'}
+              {t('today.top_action') || 'Your top action today'}
             </h2>
             <span className="text-xs font-semibold text-[var(--primary)]">
-              {isHi ? 'सर्वोच्च प्राथमिकता' : 'Ranked highest impact'}
+              {t('today.ranked_highest') || 'Ranked highest impact'}
             </span>
           </div>
 
@@ -433,27 +445,26 @@ export function TodayScreen({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="font-bold text-sm sm:text-base text-[var(--text)]">
-              {isHi ? 'आज का सबसे अच्छा समय' : 'Best Times Today'}
+              {t('today.best_times') || 'Best Times Today'}
             </h3>
             <p className="text-xs text-[var(--muted)]">
-              {isHi
-                ? '24 घंटे के चक्र में प्रति घंटे का US AQI'
-                : 'Hourly US AQI bands across the 24-hour diurnal cycle'}
+              {t('today.hourly_aqi')}
             </p>
           </div>
 
           {/* 3 labeled windows */}
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <span className="px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-              {isHi
-                ? `खिड़की: ${formatHour(bestWindow.start)}–${formatHour(bestWindow.end)}`
-                : `Best window: ${formatHour(bestWindow.start)}–${formatHour(bestWindow.end)}`}
+              {t('today.open_window', {
+                start: formatHour(bestWindow.start),
+                end: formatHour(bestWindow.end),
+              }) || `Best window: ${formatHour(bestWindow.start)}–${formatHour(bestWindow.end)}`}
             </span>
             <span className="px-2.5 py-1 rounded-full font-bold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
-              {isHi ? 'बचें: 7–10 AM' : 'Avoid: 7–10 AM'}
+              {t('today.avoid_time') || 'Avoid: 7–10 AM'}
             </span>
             <span className="px-2.5 py-1 rounded-full font-bold bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
-              {isHi ? 'प्यूरीफायर हाई: 9 PM–6 AM' : 'Purifier high: 9 PM–6 AM'}
+              {t('today.purifier_high') || 'Purifier high: 9 PM–6 AM'}
             </span>
           </div>
         </div>
@@ -491,7 +502,7 @@ export function TodayScreen({
       {/* 5. Two Ledgers Section */}
       <section className="space-y-2.5">
         <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--muted)]">
-          {isHi ? 'वायु गुणवत्ता खाते (Air Ledgers)' : 'Air Ledgers'}
+          {t('today.ledgers_title') || 'Air Ledgers'}
         </h2>
         <TwoLedger breathe={breatheData} give={giveData} />
       </section>

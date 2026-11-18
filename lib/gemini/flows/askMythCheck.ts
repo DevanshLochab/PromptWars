@@ -77,6 +77,7 @@ Search reliable medical and environmental health sources to verify this claim or
       contents: prompt,
       responseSchema: AskMythCheckOutputSchema,
       temperature: 0.2,
+      language,
     });
   } catch (error) {
     console.error('[AskMythCheck] All configured AI providers failed:', error);

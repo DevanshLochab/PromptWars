@@ -49,7 +49,7 @@ Rules:
    - Never recommend ozone-generating devices or unverified electronic ionizers.
    - Never diagnose or give medical treatment advice; for symptoms like severe coughing or breathing difficulty, advise consulting a healthcare professional or clinician. You are not a doctor.
 7. Be honest about uncertainty: surface confidence and evidence grades from the engine.
-8. Respond in the user's requested language (English or Hindi). Output valid JSON matching the provided schema only.`;
+8. Respond in the user's requested language (English, Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Kannada, or Punjabi) using its native script for all user-facing strings. Output valid JSON matching the provided schema only.`;
 }
 
 // Function tools declared for Gemini
@@ -272,7 +272,23 @@ export async function runDailyPlan(
   if (hasGeminiApiKey()) {
     try {
       const client = getGeminiClient();
-      const systemInstruction = getSystemInstruction();
+      const langMap: Record<string, string> = {
+        en: 'English',
+        hi: 'Hindi (हिन्दी)',
+        bn: 'Bengali (বাংলা)',
+        mr: 'Marathi (मराठी)',
+        te: 'Telugu (తెలుగు)',
+        ta: 'Tamil (தமிழ்)',
+        gu: 'Gujarati (ગુજરાતી)',
+        kn: 'Kannada (ಕನ್ನಡ)',
+        pa: 'Punjabi (ਪੰਜਾਬੀ)',
+      };
+      const targetLanguageName = langMap[language] || language;
+      const languageNotice =
+        language !== 'en'
+          ? `\n\nCRITICAL ACCESSIBILITY & LOCALIZATION REQUIREMENT:\nThe user's selected language is ${targetLanguageName} (${language}). You MUST generate all user-facing content (headline, why, how, whenWindow, forWhom, timeline advice, perMember tips, safetyNotes) naturally in ${targetLanguageName} using its native script.`
+          : '';
+      const systemInstruction = getSystemInstruction() + languageNotice;
 
       // Turn 1: Send user request with tools
       const userPrompt = `Generate a personalized Daily Air Quality Coach Plan for this household profile.
@@ -280,7 +296,7 @@ Household Profile:
 ${JSON.stringify(profile, null, 2)}
 
 Location: ${profile.location.placeName} (lat: ${profile.location.lat}, lon: ${profile.location.lon}).
-Language requested: ${language}.
+Language requested: ${targetLanguageName} (${language}).
 First, call the necessary engine tools: rankActions to identify the top 3 interventions, computeBaseline, and bestWindows.`;
 
       const contents: any[] = [
@@ -458,6 +474,7 @@ Output the final Plan JSON matching PlanSchema. Every numeric value must be expr
         contents: cascadePrompt,
         responseSchema: PlanSchema,
         temperature: 0.1,
+        language,
       });
 
       return substitutePlanTokens(cascadePlan, receiptsLookup);

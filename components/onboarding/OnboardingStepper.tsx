@@ -43,6 +43,7 @@ import demoSnapshot from '@/data/demo_snapshot.json';
 import { CitySelector } from '@/components/common/CitySelector';
 import { SUPPORTED_LANGUAGES, Language } from '@/lib/i18n';
 import { useProfile } from '@/lib/store/ProfileProvider';
+import { useTranslation } from '@/lib/i18n';
 
 export interface OnboardingStepperProps {
   onComplete: (profile: HouseholdProfile) => void;
@@ -80,6 +81,7 @@ export function OnboardingStepper({
   }, []);
 
   const { language: currentLang, updateLanguage } = useProfile();
+  const { t } = useTranslation();
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(
     (initialProfile?.language as Language) || currentLang || 'en'
   );
@@ -390,7 +392,7 @@ export function OnboardingStepper({
                     onClick={() => setIsSelectingCity((prev) => !prev)}
                     className="text-xs font-semibold text-[var(--primary)] hover:underline cursor-pointer"
                   >
-                    {isSelectingCity ? 'Done' : 'Change City'}
+                    {isSelectingCity ? t('common.done') : t('settings.location_change')}
                   </button>
                 </div>
 
@@ -407,7 +409,7 @@ export function OnboardingStepper({
                       onClick={() => setIsSelectingCity(true)}
                       className="px-3 py-1.5 rounded-lg bg-[var(--primary)] text-[var(--on-primary)] text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
                     >
-                      Change City
+                      {t('settings.location_change')}
                     </button>
                   </div>
                 ) : (
@@ -483,7 +485,7 @@ export function OnboardingStepper({
                           type="text"
                           value={member.name}
                           onChange={(e) => updateMember(member.id, { name: e.target.value })}
-                          placeholder="Name or nickname"
+                          placeholder={t('onboarding.member_name')}
                           className="font-bold text-base text-[var(--text)] bg-transparent border-b border-transparent hover:border-[var(--border)] focus:border-[var(--primary)] focus:outline-hidden px-1"
                         />
                       </div>
@@ -540,14 +542,14 @@ export function OnboardingStepper({
                     {/* Health Status Chips */}
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-                        Health Factors
+                        {t('onboarding.health_factors')}
                       </label>
                       <div className="flex flex-wrap gap-2">
                         {[
-                          { key: 'none', label: 'Healthy', icon: ShieldCheck },
-                          { key: 'asthma', label: 'Asthma / Respiratory', icon: Activity },
-                          { key: 'heart', label: 'Heart condition', icon: Heart },
-                          { key: 'pregnant', label: 'Pregnant', icon: Baby },
+                          { key: 'none', label: t('onboarding.health_healthy'), icon: ShieldCheck },
+                          { key: 'asthma', label: t('onboarding.health_asthma'), icon: Activity },
+                          { key: 'heart', label: t('onboarding.health_heart'), icon: Heart },
+                          { key: 'pregnant', label: t('onboarding.health_pregnant'), icon: Baby },
                         ].map(({ key, label, icon: Icon }) => {
                           const active = member.condition === key;
                           return (
@@ -716,7 +718,7 @@ export function OnboardingStepper({
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-bold text-[var(--text)] flex items-center gap-2">
                     <Wind size={18} className="text-[var(--primary)]" />
-                    <span>Do you have an air purifier?</span>
+                    <span>{t('onboarding.purifier_question')}</span>
                   </label>
                   <div className="flex items-center gap-1 bg-[var(--surface-2)] p-1 rounded-full border border-[var(--border)]">
                     <button
@@ -728,7 +730,7 @@ export function OnboardingStepper({
                           : 'text-[var(--muted)]'
                       }`}
                     >
-                      Yes
+                      {t('common.confirm')}
                     </button>
                     <button
                       type="button"
@@ -739,7 +741,7 @@ export function OnboardingStepper({
                           : 'text-[var(--muted)]'
                       }`}
                     >
-                      No
+                      {t('common.cancel')}
                     </button>
                   </div>
                 </div>
@@ -747,7 +749,7 @@ export function OnboardingStepper({
                 {hasPurifier && (
                   <div className="pt-2 border-t border-[var(--border)] space-y-2">
                     <span className="text-xs font-semibold text-[var(--muted)]">
-                      Purifier capacity (Clean Air Delivery)
+                      {t('onboarding.purifier_capacity')}
                     </span>
                     <div className="grid grid-cols-3 gap-2">
                       {[

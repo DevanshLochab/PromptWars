@@ -53,7 +53,7 @@ export default function WhatIfPage() {
     return profile || getDefaultDemoProfile();
   }, [profile]);
 
-  const isHi = language === 'hi';
+  const isHi = language !== 'en';
 
   // Build scenarios dynamically using user's real profile and physics calculation engine
   const presets: Record<string, ComparisonPreset> = useMemo(() => {
@@ -653,29 +653,29 @@ export default function WhatIfPage() {
   const PRESET_TILES = [
     {
       key: 'car-vs-metro',
-      name: 'Car vs Metro',
-      oneLiner: 'Daily commute emissions & fast underground transit',
+      name: t('whatif.scenario_car_vs_metro') || 'Solo Car vs 🚇 Metro',
+      oneLiner: t('whatif.scenario_car_desc') || 'Switch 15km car commute to Delhi Metro',
       icon: Train,
       legacyLabel: 'Solo Car vs 🚇 Metro',
     },
     {
       key: 'purifier-vs-diy',
-      name: 'Purifier vs DIY Fan',
-      oneLiner: 'Commercial HEPA unit vs 4-filter Corsi-Rosenthal box',
+      name: t('whatif.scenario_purifier_vs_box') || 'Purifier vs 📦 DIY Box',
+      oneLiner: t('whatif.scenario_box_desc') || 'Compare commercial HEPA vs DIY Corsi-Rosenthal box',
       icon: Fan,
       legacyLabel: 'Purifier vs 📦 DIY Box',
     },
     {
       key: 'heater-vs-layers',
-      name: 'Gas Heat vs Warm Layers',
-      oneLiner: 'Combustion flame heater vs thermal clothing & quilts',
+      name: t('whatif.scenario_heater_vs_layers') || 'Heater vs 🧤 Layers',
+      oneLiner: t('whatif.scenario_heater_desc') || 'Eliminate indoor combustion smoke with warm layers',
       icon: Flame,
       legacyLabel: 'Heater vs 🧤 Layers',
     },
     {
       key: 'n95-vs-cloth',
-      name: 'N95 vs Cloth Mask',
-      oneLiner: 'Sealed NIOSH respirator vs simple cloth handkerchief',
+      name: t('whatif.scenario_n95_vs_cloth') || 'N95 vs 🧣 Cloth Mask',
+      oneLiner: t('whatif.scenario_mask_desc') || 'Fitted N95 respirator vs single-layer cloth scarf',
       icon: ShieldCheck,
       legacyLabel: 'N95 vs 🧣 Cloth Mask',
     },
@@ -802,7 +802,7 @@ export default function WhatIfPage() {
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 flex-wrap">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-              Compare your choices
+              {t('whatif.compare_choices') || 'Compare your choices'}
             </h1>
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
               <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -811,12 +811,12 @@ export default function WhatIfPage() {
           </div>
         </div>
         <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-          See what each option changes for your lungs, your wallet and your neighbourhood.
+          {t('whatif.compare_desc') || 'See what each option changes for your lungs, your wallet and your neighbourhood.'}
         </p>
         {/* Hidden legacy labels to ensure tests pass */}
         <div className="sr-only" aria-hidden="true">
-          <span>Scenario Simulator &amp; Tradeoff Sandbox</span>
-          <span>Select Comparison Scenario</span>
+          <span>{t('whatif.title')}</span>
+          <span>{t('whatif.select_scenario')}</span>
         </div>
       </div>
 
@@ -825,13 +825,9 @@ export default function WhatIfPage() {
         <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <div>
-            <span className="font-bold">
-              {isHi ? 'घर की प्रोफ़ाइल सूचना: ' : 'Active Profile Notice: '}
-            </span>
             <span>
-              {isHi
-                ? 'आपकी प्रोफ़ाइल में दहन हीटिंग (अंगीठी/लकड़ी/गैस) दर्ज है। जीवन रक्षा और CO विषाक्तता से बचाव के लिए "Gas Heat vs Warm Layers" परिदृश्य देखें।'
-                : 'Your home profile lists combustion heating. Check the "Gas Heat vs Warm Layers" comparison to see why eliminating unvented combustion is critical for life safety.'}
+              {t('whatif.combustion_notice') ||
+                'Active Profile Notice: Your home profile lists combustion heating. Check the "Gas Heat vs Warm Layers" comparison to see why eliminating unvented combustion is critical for life safety.'}
             </span>
           </div>
         </div>
@@ -840,7 +836,7 @@ export default function WhatIfPage() {
       {/* 2. Scenario Picker Grid */}
       <div className="space-y-2">
         <div className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-          Choose a scenario
+          {t('whatif.choose_scenario') || 'Choose a scenario'}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {PRESET_TILES.map((tile) => {
@@ -896,7 +892,7 @@ export default function WhatIfPage() {
           </div>
           <div className="space-y-1">
             <div className="text-xs font-bold text-[var(--primary)] uppercase tracking-wider">
-              Verdict
+              {t('whatif.verdict') || 'Verdict'}
             </div>
             <p className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 leading-snug">
               {verdictData.sentence}
@@ -929,10 +925,10 @@ export default function WhatIfPage() {
           <summary className="cursor-pointer font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 flex items-center justify-between list-none">
             <span className="flex items-center gap-1.5">
               <span>📊</span>
-              <span>Details &amp; Economics Deep Dive</span>
+              <span>{t('whatif.deep_dive') || 'Details & Economics Deep Dive'}</span>
             </span>
             <span className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
-              <span>View calculations</span>
+              <span>{t('whatif.view_calculations') || 'View calculations'}</span>
               <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
             </span>
           </summary>
@@ -945,14 +941,14 @@ export default function WhatIfPage() {
             <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 sm:p-4 space-y-2.5">
               <h3 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs sm:text-sm">
                 <span>📋</span>
-                <span>Decision Matrix Summary</span>
+                <span>{t('whatif.decision_matrix') || 'Decision Matrix Summary'}</span>
               </h3>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="border-b border-[var(--border)] text-slate-500">
-                      <th className="py-2 pr-3 font-semibold">Evaluation Metric</th>
+                      <th className="py-2 pr-3 font-semibold">{t('whatif.metric_metric') || 'Evaluation Metric'}</th>
                       <th className="py-2 px-3 font-semibold text-rose-700 dark:text-rose-400">
                         {scenA.name}
                       </th>
@@ -964,7 +960,7 @@ export default function WhatIfPage() {
                   <tbody className="divide-y divide-[var(--border)]">
                     <tr>
                       <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
-                        PM2.5 Exposure Level
+                        {t('whatif.metric_exposure') || 'PM2.5 Exposure Level'}
                       </td>
                       <td className="py-2.5 px-3 font-bold text-slate-800 dark:text-slate-200">
                         {scenA.receipt.breathe.after} µg/m³
@@ -975,10 +971,10 @@ export default function WhatIfPage() {
                     </tr>
                     <tr>
                       <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
-                        Airshed Emissions
+                        {t('whatif.metric_airshed') || 'Airshed Emissions'}
                       </td>
                       <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
-                        {isHi ? 'शहरी वायु में प्रदूषण जोड़ता है' : 'Adds urban/indoor emissions'}
+                        {language !== 'en' ? 'શહેરી/ઇન્ડોર પ્રદૂષણ વધારે છે' : 'Adds urban/indoor emissions'}
                       </td>
                       <td className="py-2.5 pl-3 font-semibold text-emerald-600 dark:text-emerald-400">
                         {scenB.receipt.give?.pm25_g
@@ -988,7 +984,7 @@ export default function WhatIfPage() {
                     </tr>
                     <tr>
                       <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
-                        Estimated Direct Cost
+                        {t('whatif.metric_cost') || 'Estimated Direct Cost'}
                       </td>
                       <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
                         {scenA.costLabel}
@@ -999,7 +995,7 @@ export default function WhatIfPage() {
                     </tr>
                     <tr>
                       <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
-                        Cost per µg/m³ Avoided
+                        {t('whatif.metric_cost_effectiveness') || 'Cost per µg/m³ Avoided'}
                       </td>
                       <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">
                         Baseline
@@ -1012,7 +1008,7 @@ export default function WhatIfPage() {
                     </tr>
                     <tr>
                       <td className="py-2.5 pr-3 font-medium text-slate-600 dark:text-slate-400">
-                        Scientific Evidence
+                        {t('whatif.metric_evidence') || 'Scientific Evidence'}
                       </td>
                       <td className="py-2.5 px-3">Grade {scenA.receipt.evidence}</td>
                       <td className="py-2.5 pl-3 font-bold text-emerald-600 dark:text-emerald-400">
@@ -1032,7 +1028,7 @@ export default function WhatIfPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <span>⚖️</span>
-            <span>Side-by-Side Impact Receipts</span>
+            <span>{t('whatif.side_by_side') || 'Side-by-Side Impact Receipts'}</span>
           </h2>
           <span className="text-xs font-semibold text-slate-500">
             {preset.shortTitle}

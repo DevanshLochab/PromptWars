@@ -19,10 +19,11 @@ import {
 } from '@/lib/engine';
 import actionsData from '@/data/actions.json';
 import { AlertTriangle, Share2, Copy, Check, X } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 export default function PlanPage() {
   const { profile, isDemoMode, language, setProfile } = useProfile();
-  const isHi = language === 'hi';
+  const { t } = useTranslation();
   const effectiveProfile = profile || (isDemoMode ? getDefaultDemoProfile() : null);
 
   const [plan, setPlan] = useState<Plan | null>(null);
@@ -51,7 +52,7 @@ export default function PlanPage() {
         const res = await fetch('/api/plan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ profile: prof }),
+          body: JSON.stringify({ profile: { ...prof, language } }),
         });
 
         if (res.ok) {
@@ -319,24 +320,18 @@ https://saans.local`;
 
         {/* Title & Plain-Language Sentence */}
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-          {language === 'hi'
-            ? 'कल के लिए आपकी पारिवारिक वायु सुरक्षा योजना'
-            : "Tomorrow's Air Plan"}
+          {t('plan.title') || "Tomorrow's Air Plan"}
         </h1>
 
         <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
-          {isHi
-            ? 'यहाँ आपके परिवार के लिए तैयार की गई कल की विशेष वायु सुरक्षा योजना है।'
-            : "Here's your plan for tomorrow, tailored for your family."}
+          {t('plan.subtitle') || "Here's your plan for tomorrow, tailored for your family."}
         </p>
 
         {/* Member Filter Chips */}
         {members.length > 0 && (
           <div className="pt-2">
             <div className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">
-              {isHi
-                ? 'परिवार के सदस्य अनुसार टाइमलाइन फ़िल्टर करें:'
-                : 'Filter timeline by family member:'}
+              {t('plan.filter_timeline') || 'Filter timeline by family member:'}
             </div>
             <div
               role="tablist"
@@ -352,7 +347,7 @@ https://saans.local`;
                     : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
-                {isHi ? `पूरा परिवार (${members.length})` : `All Family (${members.length})`}
+                {t('plan.all_family', { count: members.length }) || `All Family (${members.length})`}
               </button>
               {members.map((member) => {
                 const isSelected = selectedMemberId === member.id;
@@ -383,7 +378,7 @@ https://saans.local`;
             {selectedMember && selectedMemberTips.length > 0 && (
               <div className="mt-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 space-y-1">
                 <span className="font-bold text-slate-900 dark:text-slate-100">
-                  Focus for {selectedMember.nickname}:
+                  {t('plan.focus_for', { name: selectedMember.nickname }) || `Focus for ${selectedMember.nickname}:`}
                 </span>
                 <ul className="list-disc list-inside space-y-0.5 text-slate-600 dark:text-slate-300">
                   {selectedMemberTips.map((tip, idx) => (
@@ -412,15 +407,11 @@ https://saans.local`;
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <span>📋</span>
             <span>
-              {isHi
-                ? 'कल के शीर्ष ३ प्राथमिकता वाले कदम'
-                : 'Top 3 Priority Interventions'}
+              {t('plan.top_actions') || 'Top 3 Priority Interventions'}
             </span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            {isHi
-              ? 'आपके परिवार के लिए अनुमानित व्यक्तिगत जोखिम में कमी के आधार पर क्रमित'
-              : 'Ranked by calculated personal exposure averted for your household'}
+            {t('plan.top_actions_sub') || 'Ranked by calculated personal exposure averted for your household'}
           </p>
         </div>
 
@@ -430,7 +421,7 @@ https://saans.local`;
               key={item.receipt.id}
               receipt={item.receipt}
               members={members}
-              actionTitle={item.action.title}
+              actionTitle={t('actions.' + item.action.id + '.title') || item.action.title}
             />
           ))}
         </div>
@@ -448,9 +439,7 @@ https://saans.local`;
           <div className="flex items-center gap-2 text-amber-950 dark:text-amber-200 font-bold text-sm">
             <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
             <span>
-              {isHi
-                ? 'महत्वपूर्ण सुरक्षा एवं जीवन रक्षा निर्देश'
-                : 'Important Safety Directives'}
+              {t('plan.safety_title') || 'Important Safety Directives'}
             </span>
           </div>
 
@@ -460,10 +449,8 @@ https://saans.local`;
               <div className="flex items-start gap-2">
                 <span className="font-bold shrink-0">⚠️ CO Hazard:</span>
                 <span>
-                  Coal/wood heating generates toxic Carbon Monoxide (CO). Never
-                  completely seal rooms while combustion heaters are active.
-                  Keep a window cracked at least 2 inches to guarantee fresh air
-                  exchange.
+                  {t('plan.co_warning') ||
+                    'Coal/wood heating generates toxic Carbon Monoxide (CO). Never completely seal rooms while combustion heaters are active. Keep a window cracked at least 2 inches to guarantee fresh air exchange.'}
                 </span>
               </div>
             )}
@@ -473,11 +460,12 @@ https://saans.local`;
               <div className="flex items-start gap-2">
                 <span className="font-bold shrink-0">🫁 Asthma Alert:</span>
                 <span>
-                  {asthmaticMembers.map((m) => m.nickname).join(', ')}{' '}
-                  {asthmaticMembers.length > 1 ? 'have' : 'has'} asthma. Keep
-                  rescue inhalers within reach, run bedroom purifier
-                  continuously, and avoid outdoor physical activity during morning
-                  and evening smog peaks.
+                  {t('plan.asthma_alert', {
+                    names: asthmaticMembers.map((m) => m.nickname).join(', '),
+                  }) ||
+                    `${asthmaticMembers.map((m) => m.nickname).join(', ')} ${
+                      asthmaticMembers.length > 1 ? 'have' : 'has'
+                    } asthma. Keep rescue inhalers within reach, run bedroom purifier continuously, and avoid outdoor physical activity during morning and evening smog peaks.`}
                 </span>
               </div>
             )}
@@ -499,8 +487,8 @@ https://saans.local`;
           </div>
 
           <p className="text-[11px] text-amber-800/80 dark:text-amber-400/80 italic pt-1 border-t border-amber-200 dark:border-amber-800/60">
-            Not medical advice. In case of respiratory distress or emergency, call
-            112 immediately.
+            {t('plan.medical_disclaimer') ||
+              'Not medical advice. In case of respiratory distress or emergency, call 112 immediately.'}
           </p>
         </section>
       )}
@@ -510,7 +498,7 @@ https://saans.local`;
         <footer className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 space-y-2 text-xs">
           <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
             <span>📚</span>
-            <span>Scientific Evidence & Guidelines</span>
+            <span>{t('plan.citations_title') || 'Scientific Evidence & Guidelines'}</span>
           </div>
           <ul className="space-y-1 text-[11px] text-slate-500 dark:text-slate-400 list-disc list-inside">
             {plan.citations.map((c, idx) => (
@@ -542,7 +530,7 @@ https://saans.local`;
         >
           <Share2 className="w-4 h-4" />
           <span>
-            {isHi ? 'व्हाट्सएप पर सुरक्षा योजना साझा करें' : 'Share Plan via WhatsApp'}
+            {t('plan.share_whatsapp') || 'Share Plan via WhatsApp'}
           </span>
         </button>
       </div>
@@ -563,7 +551,7 @@ https://saans.local`;
               <div className="flex items-center gap-2">
                 <Share2 className="w-5 h-5 text-emerald-600" />
                 <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
-                  Share Family Plan
+                  {t('plan.share_modal_title') || 'Share Family Plan'}
                 </h3>
               </div>
               <button
@@ -577,8 +565,8 @@ https://saans.local`;
             </div>
 
             <p className="text-xs text-slate-600 dark:text-slate-300">
-              Share tomorrow&apos;s tailored air protection schedule with your
-              family WhatsApp group or caregivers.
+              {t('plan.share_modal_desc') ||
+                "Share tomorrow's tailored air protection schedule with your family WhatsApp group or caregivers."}
             </p>
 
             {/* Message Preview Box */}
@@ -598,7 +586,9 @@ https://saans.local`;
                   <Copy className="w-4 h-4" />
                 )}
                 <span>
-                  {copiedShare ? 'Copied to Clipboard!' : 'Copy Text'}
+                  {copiedShare
+                    ? (t('plan.copied') || 'Copied to Clipboard!')
+                    : (t('plan.copy_text') || 'Copy Text')}
                 </span>
               </button>
               <a
@@ -608,7 +598,7 @@ https://saans.local`;
                 className="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 transition-colors text-center"
               >
                 <Share2 className="w-4 h-4" />
-                <span>Open WhatsApp</span>
+                <span>{t('plan.open_whatsapp') || 'Open WhatsApp'}</span>
               </a>
             </div>
           </div>

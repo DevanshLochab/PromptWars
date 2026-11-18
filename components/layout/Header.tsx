@@ -5,10 +5,12 @@ import { Settings, MapPin } from 'lucide-react';
 import { useProfile } from '@/lib/store/ProfileProvider';
 import { getAirQuality } from '@/lib/data/openMeteo';
 import { useLedgerStore } from '@/lib/store/ledgerStore';
+import { useTranslation } from '@/lib/i18n';
 
 export function Header() {
   const { profile, isDemoMode, openSettings } = useProfile();
   const ledger = useLedgerStore();
+  const { t } = useTranslation();
   const [currentAqi, setCurrentAqi] = useState<number | null>(ledger?.currentAQI ?? 167);
 
   const cityName = profile?.location.placeName
@@ -54,7 +56,7 @@ export function Header() {
             type="button"
             onClick={openSettings}
             className="flex items-center gap-1 px-2 py-0.5 rounded-[var(--radius-pill)] bg-[var(--surface-2)] border border-[var(--border)] text-[11px] font-semibold text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
-            title="Click to change city"
+            title={t('settings.location_change')}
           >
             <MapPin size={11} className="text-[var(--primary)] shrink-0" />
             <span className="truncate max-w-[100px]">{cityName}</span>
@@ -67,7 +69,7 @@ export function Header() {
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-pill)] border text-xs font-semibold shadow-xs ${getAqiBadgeColor(
                 currentAqi
               )}`}
-              title="Current Ambient US AQI"
+              title={t('aqi.current_outdoor')}
             >
               <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
               <span>AQI {currentAqi}</span>

@@ -22,31 +22,32 @@ export interface SupportedLanguageInfo {
   code: Language;
   label: string;
   native: string;
+  nativeLabel: string;
   region: string;
 }
 
 export const SUPPORTED_LANGUAGES: SupportedLanguageInfo[] = [
-  { code: 'en', label: 'English', native: 'English', region: 'All India' },
-  { code: 'hi', label: 'Hindi', native: 'हिन्दी', region: 'North & Central India' },
-  { code: 'bn', label: 'Bengali', native: 'বাংলা', region: 'West Bengal & Tripura' },
-  { code: 'mr', label: 'Marathi', native: 'मराठी', region: 'Maharashtra' },
-  { code: 'te', label: 'Telugu', native: 'తెలుగు', region: 'Telangana & Andhra Pradesh' },
-  { code: 'ta', label: 'Tamil', native: 'தமிழ்', region: 'Tamil Nadu' },
-  { code: 'gu', label: 'Gujarati', native: 'ગુજરાતી', region: 'Gujarat' },
-  { code: 'kn', label: 'Kannada', native: 'ಕನ್ನಡ', region: 'Karnataka' },
-  { code: 'pa', label: 'Punjabi', native: 'ਪੰਜਾਬੀ', region: 'Punjab & Chandigarh' },
+  { code: 'en', label: 'English', native: 'English', nativeLabel: 'English', region: 'All India' },
+  { code: 'hi', label: 'Hindi', native: 'हिन्दी', nativeLabel: 'हिन्दी', region: 'North & Central India' },
+  { code: 'bn', label: 'Bengali', native: 'বাংলা', nativeLabel: 'বাংলা', region: 'West Bengal & Tripura' },
+  { code: 'mr', label: 'Marathi', native: 'मराठी', nativeLabel: 'मराठी', region: 'Maharashtra' },
+  { code: 'te', label: 'Telugu', native: 'తెలుగు', nativeLabel: 'తెలుగు', region: 'Telangana & Andhra Pradesh' },
+  { code: 'ta', label: 'Tamil', native: 'தமிழ்', nativeLabel: 'தமிழ்', region: 'Tamil Nadu' },
+  { code: 'gu', label: 'Gujarati', native: 'ગુજરાતી', nativeLabel: 'ગુજરાતી', region: 'Gujarat' },
+  { code: 'kn', label: 'Kannada', native: 'ಕನ್ನಡ', nativeLabel: 'ಕನ್ನಡ', region: 'Karnataka' },
+  { code: 'pa', label: 'Punjabi', native: 'ਪੰਜਾਬੀ', nativeLabel: 'ਪੰਜਾਬੀ', region: 'Punjab & Chandigarh' },
 ];
 
 const catalogues: Record<Language, Record<string, string>> = {
   en,
-  hi,
-  bn,
-  mr,
-  te,
-  ta,
-  gu,
-  kn,
-  pa,
+  hi: { ...en, ...hi },
+  bn: { ...en, ...bn },
+  mr: { ...en, ...mr },
+  te: { ...en, ...te },
+  ta: { ...en, ...ta },
+  gu: { ...en, ...gu },
+  kn: { ...en, ...kn },
+  pa: { ...en, ...pa },
 };
 
 /**

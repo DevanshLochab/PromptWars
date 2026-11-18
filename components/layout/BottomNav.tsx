@@ -2,24 +2,26 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Sun, Calendar, GitCompare, Users, MessageCircle } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 const NAV = [
-  { href: '/', label: 'Today', icon: Sun },
-  { href: '/plan', label: 'Plan', icon: Calendar },
-  { href: '/what-if', label: 'Compare', icon: GitCompare },
-  { href: '/community', label: 'Community', icon: Users },
-  { href: '/ask', label: 'Ask', icon: MessageCircle },
-];
+  { href: '/', labelKey: 'nav.today', icon: Sun },
+  { href: '/plan', labelKey: 'nav.plan', icon: Calendar },
+  { href: '/what-if', labelKey: 'nav.what_if', icon: GitCompare },
+  { href: '/community', labelKey: 'nav.community', icon: Users },
+  { href: '/ask', labelKey: 'nav.ask', icon: MessageCircle },
+] as const;
 
 export default function BottomNav() {
   const path = usePathname();
+  const { t } = useTranslation();
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--border)] bg-[var(--surface)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', height: 'calc(var(--nav-h) + env(safe-area-inset-bottom, 0px))' }}
     >
       <div className="flex h-[var(--nav-h)] items-stretch">
-        {NAV.map(({ href, label, icon: Icon }) => {
+        {NAV.map(({ href, labelKey, icon: Icon }) => {
           const active = path === href || (href !== '/' && path.startsWith(href));
           return (
             <Link
@@ -30,7 +32,7 @@ export default function BottomNav() {
               }`}
             >
               <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
-              <span>{label}</span>
+              <span>{t(labelKey)}</span>
             </Link>
           );
         })}

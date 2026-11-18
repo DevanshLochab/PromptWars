@@ -104,7 +104,7 @@ export function SettingsDrawer({
             <button
               onClick={onClose}
               className="p-2 rounded-full text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
-              aria-label="Close drawer"
+              aria-label={t('settings.close_drawer')}
             >
               ✕
             </button>
@@ -116,7 +116,7 @@ export function SettingsDrawer({
               <div className="flex items-center gap-2">
                 <MapPin size={18} className="text-[var(--primary)]" />
                 <label className="text-sm font-semibold text-[var(--text)]">
-                  City & Airshed Location
+                  {t('settings.location_title')}
                 </label>
               </div>
               <button
@@ -124,13 +124,13 @@ export function SettingsDrawer({
                 onClick={() => setIsChangingCity((prev) => !prev)}
                 className="text-xs font-semibold text-[var(--primary)] hover:underline cursor-pointer"
               >
-                {isChangingCity ? 'Done' : 'Change City'}
+                {isChangingCity ? t('common.done') : t('settings.location_change')}
               </button>
             </div>
 
             {cityChangeSuccess && (
               <div className="flex items-center gap-1.5 p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
-                <Check size={14} /> Location updated! Fetching local air data...
+                <Check size={14} /> {t('settings.location_updated')}
               </div>
             )}
 
@@ -174,7 +174,7 @@ export function SettingsDrawer({
               </label>
             </div>
             <p className="text-xs text-[var(--muted)]">
-              Select your preferred regional language. All advice and AI interactions will adapt:
+              {t('settings.language_desc')}
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -275,7 +275,7 @@ export function SettingsDrawer({
           {/* 5. Reset / Clear Data */}
           <div className="pt-4 border-t border-[var(--border)] space-y-3">
             <h3 className="text-sm font-semibold text-[var(--danger)]">
-              Data Management
+              {t('settings.data_management')}
             </h3>
             <button
               onClick={() => {

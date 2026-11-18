@@ -126,10 +126,10 @@ export function CommunityDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="space-y-1">
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text)]">
-            Our neighbourhood&apos;s air
+            {t('community.our_air') || "Our neighbourhood's air"}
           </h1>
           <p className="text-xs text-[var(--muted)]">
-            Shared community impact, advocacy toolkits, and neighbour care
+            {t('community.our_air_sub') || 'Shared community impact, advocacy toolkits, and neighbour care'}
           </p>
         </div>
         <WhatsAppSummary />
@@ -144,7 +144,7 @@ export function CommunityDashboard() {
                 {pooledData?.communityName || 'Sector 15 RWA'}
               </span>
               <span className="text-xs px-2.5 py-0.5 rounded-md font-mono font-bold bg-[var(--surface-2)] text-[var(--primary)] border border-[var(--border)]">
-                Code: {communityCode}
+                {t('community.code_prefix') || 'Code:'} {communityCode}
               </span>
             </div>
 
@@ -153,7 +153,7 @@ export function CommunityDashboard() {
               <div>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
-                  <span>Demo data — join to see real figures</span>
+                  <span>{t('community.demo_data_chip') || 'Demo data — join to see real figures'}</span>
                 </span>
               </div>
             )}
@@ -163,10 +163,10 @@ export function CommunityDashboard() {
             <button
               type="button"
               onClick={() => setIsChangingCode(true)}
-              className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border)] hover:bg-[var(--surface)] transition-colors shadow-2xs"
+              className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border)] hover:bg-[var(--surface)] transition-colors shadow-2xs cursor-pointer"
             >
               <Edit2 className="w-3.5 h-3.5 text-[var(--muted)]" />
-              <span>Change society / code</span>
+              <span>{t('community.change_code') || 'Change society / code'}</span>
             </button>
           ) : (
             <form onSubmit={handleJoinCode} className="flex items-center gap-2 self-start sm:self-auto">
@@ -174,20 +174,20 @@ export function CommunityDashboard() {
                 type="text"
                 value={inputCode}
                 onChange={(e) => setInputCode(e.target.value)}
-                placeholder="e.g. A4B2 or SECTOR-15"
+                placeholder={t('community.enter_code_placeholder') || 'e.g. A4B2 or SECTOR-15'}
                 className="p-1.5 px-3 text-xs rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] uppercase focus:ring-2 focus:ring-[var(--primary)]"
               />
               <button
                 type="submit"
-                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--primary)] text-[var(--on-primary)] hover:opacity-90 transition-opacity"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--primary)] text-[var(--on-primary)] hover:opacity-90 transition-opacity cursor-pointer"
               >
-                Join
+                {t('common.confirm') || 'Join'}
               </button>
               <button
                 type="button"
                 onClick={() => setIsChangingCode(false)}
-                className="p-1.5 text-xs text-[var(--muted)] hover:text-[var(--text)]"
-                title="Cancel"
+                className="p-1.5 text-xs text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
+                title={t('common.cancel') || 'Cancel'}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -201,53 +201,53 @@ export function CommunityDashboard() {
         <button
           type="button"
           onClick={() => setActiveTab('impact')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all cursor-pointer ${
             activeTab === 'impact'
               ? 'bg-[var(--primary)] text-[var(--on-primary)] shadow-xs font-bold'
               : 'bg-[var(--surface)] text-[var(--muted)] border border-[var(--border)] hover:bg-[var(--surface-2)]'
           }`}
         >
           <BarChart2 className="w-4 h-4" />
-          <span>Impact</span>
+          <span>{t('community.tab_impact') || 'Impact'}</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('kits')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all cursor-pointer ${
             activeTab === 'kits'
               ? 'bg-[var(--primary)] text-[var(--on-primary)] shadow-xs font-bold'
               : 'bg-[var(--surface)] text-[var(--muted)] border border-[var(--border)] hover:bg-[var(--surface-2)]'
           }`}
         >
           <FolderKanban className="w-4 h-4" />
-          <span>Action Kits</span>
+          <span>{t('community.tab_kits') || 'Action Kits'}</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('report')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all cursor-pointer ${
             activeTab === 'report'
               ? 'bg-[var(--primary)] text-[var(--on-primary)] shadow-xs font-bold'
               : 'bg-[var(--surface)] text-[var(--muted)] border border-[var(--border)] hover:bg-[var(--surface-2)]'
           }`}
         >
           <MapPin className="w-4 h-4" />
-          <span>Report</span>
+          <span>{t('community.tab_report') || 'Report'}</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('care')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all cursor-pointer ${
             activeTab === 'care'
               ? 'bg-[var(--primary)] text-[var(--on-primary)] shadow-xs font-bold'
               : 'bg-[var(--surface)] text-[var(--muted)] border border-[var(--border)] hover:bg-[var(--surface-2)]'
           }`}
         >
           <Heart className="w-4 h-4" />
-          <span>Care</span>
+          <span>{t('community.tab_care') || 'Care'}</span>
         </button>
       </div>
 
@@ -369,7 +369,7 @@ export function CommunityDashboard() {
                       {idx + 1}
                     </span>
                     <span className="text-xs font-semibold text-[var(--text)]">
-                      {act.title}
+                      {t('actions.' + act.actionId + '.title') || act.title}
                     </span>
                   </div>
                   <span className="text-xs font-bold text-[var(--muted)]">

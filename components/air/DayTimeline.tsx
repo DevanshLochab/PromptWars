@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { PlanTimelineEntry, Member } from '@/lib/schemas';
 import { Sun, Cloud, Moon, Sunrise, Check } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 export interface DayTimelineProps {
   timeline: (PlanTimelineEntry | {
@@ -112,6 +113,7 @@ export function DayTimeline({
   onSelectHour,
   className = '',
 }: DayTimelineProps) {
+  const { t } = useTranslation();
   // Local state for checkboxes
   const [doneHours, setDoneHours] = useState<Record<number, boolean>>({});
 
@@ -230,7 +232,7 @@ export function DayTimeline({
   const sections = [
     {
       id: 'morning',
-      title: 'Morning',
+      title: t('air.morning') || 'Morning',
       range: '5 AM – 11 AM',
       icon: Sunrise,
       iconColor: 'text-amber-500',
@@ -238,7 +240,7 @@ export function DayTimeline({
     },
     {
       id: 'afternoon',
-      title: 'Afternoon',
+      title: t('air.afternoon') || 'Afternoon',
       range: '11 AM – 5 PM',
       icon: Sun,
       iconColor: 'text-amber-500',
@@ -246,7 +248,7 @@ export function DayTimeline({
     },
     {
       id: 'evening',
-      title: 'Evening',
+      title: t('air.evening') || 'Evening',
       range: '5 PM – 9 PM',
       icon: Cloud,
       iconColor: 'text-sky-500',
@@ -254,7 +256,7 @@ export function DayTimeline({
     },
     {
       id: 'night',
-      title: 'Night',
+      title: t('air.night') || 'Night',
       range: '9 PM – 5 AM',
       icon: Moon,
       iconColor: 'text-indigo-400',
@@ -272,10 +274,10 @@ export function DayTimeline({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
         <div>
           <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <span>24-Hour Action Timeline</span>
+            <span>{t('air.timeline_title') || '24-Hour Action Timeline'}</span>
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Diurnal rhythm calibrated for your local air forecast
+            {t('air.timeline_sub') || 'Diurnal rhythm calibrated for your local air forecast'}
           </p>
         </div>
 
@@ -283,7 +285,7 @@ export function DayTimeline({
         {bestWindows && bestWindows.length > 0 && (
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 font-bold text-xs border border-emerald-200 dark:border-emerald-800">
             <span>🪟</span>
-            <span>Ventilate Window ({formatVentWindow(bestWindows)})</span>
+            <span>{t('air.ventilate_window_badge', { window: formatVentWindow(bestWindows) }) || `Ventilate Window (${formatVentWindow(bestWindows)})`}</span>
           </div>
         )}
       </div>
@@ -314,7 +316,7 @@ export function DayTimeline({
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 dark:text-slate-500 italic pl-6">
-                  No specific interventions required during this window.
+                  {t('air.no_interventions') || 'No specific interventions required during this window.'}
                 </p>
               </div>
             );

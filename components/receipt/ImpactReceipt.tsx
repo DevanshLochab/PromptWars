@@ -6,6 +6,7 @@ import { EvidenceBadge } from './EvidenceBadge';
 import { AssumptionsDrawer } from './AssumptionsDrawer';
 import actionsData from '@/data/actions.json';
 import { CheckCircle, Zap, Clock, Coins, ChevronDown } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 export interface ImpactReceiptProps {
   receipt: Receipt;
@@ -26,11 +27,14 @@ export function ImpactReceipt({
 }: ImpactReceiptProps) {
   const [done, setDone] = useState(initialDone);
   const [showAssumptions, setShowAssumptions] = useState(false);
+  const { t } = useTranslation();
 
-  // Look up action metadata from actions.json
+  // Look up action metadata from actions.json & translations
   const actionMeta = actionsData.find((a) => a.id === receipt.actionId);
+  const translatedTitle = t('actions.' + receipt.actionId + '.title');
   const baseTitle =
     actionTitle ||
+    (translatedTitle !== 'actions.' + receipt.actionId + '.title' ? translatedTitle : null) ||
     actionMeta?.title ||
     receipt.actionId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -52,11 +56,18 @@ export function ImpactReceipt({
   // Reduction percentage for plain-sentence headline
   const deltaPct = Math.abs(Math.round(receipt.breathe.deltaPct || 0));
 
-  // Headline: plain sentence ("Run your purifier on high tonight — Aarav breathes 84% cleaner air.")
+  // Headline: plain sentence
   const headline =
     deltaPct > 0
-      ? `${baseTitle.replace(/[\.\-—]\s*$/, '')} — ${primaryName} breathes ${deltaPct}% cleaner air.`
-      : `${baseTitle.replace(/[\.\-—]\s*$/, '')} — protects ${primaryName} from high pollution.`;
+      ? t('receipt.headline_cleaner', {
+          title: baseTitle.replace(/[\.\-—]\s*$/, ''),
+          name: primaryName,
+          pct: deltaPct,
+        })
+      : t('receipt.headline_protect', {
+          title: baseTitle.replace(/[\.\-—]\s*$/, ''),
+          name: primaryName,
+        });
 
   const handleToggleDone = () => {
     const next = !done;
@@ -73,12 +84,12 @@ export function ImpactReceipt({
 
     if (co2e > 0) {
       const kg = (co2e / 1000).toFixed(1);
-      return `Saves ~${kg} kg CO₂e this week`;
+      return t('receipt.give_co2', { co2: kg });
     }
     if (pm25 > 0) {
-      return `Avoids ~${pm25}g PM2.5 — keeps air cleaner for your block this week`;
+      return t('receipt.give_pm25', { pm25 });
     }
-    return `Saves ~0.8 kg CO₂e this week with energy-efficient filtration`;
+    return t('receipt.give_default');
   };
 
   // WHO guideline threshold is 15 µg/m³
@@ -141,7 +152,7 @@ export function ImpactReceipt({
             {done && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 shrink-0">
                 <CheckCircle className="w-3 h-3" />
-                Done
+                {t('receipt.done_badge') || 'Done'}
               </span>
             )}
           </div>
@@ -157,7 +168,7 @@ export function ImpactReceipt({
       <div className="rounded-xl p-3 sm:p-4 bg-[var(--surface-2)] border border-[var(--border)] space-y-3">
         <div className="flex items-baseline justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-sky-800 dark:text-sky-300">
-            What you BREATHE
+            {t('receipt.what_you_breathe') || 'What you BREATHE'}
           </span>
           <span className="text-xl sm:text-2xl font-black text-[var(--text)]">
             ~{whoRatio}× WHO guideline
@@ -180,7 +191,7 @@ export function ImpactReceipt({
           {/* "Without" Bar */}
           <div className="space-y-0.5">
             <div className="flex justify-between text-xs text-[var(--muted)]">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Without</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300">{t('receipt.without') || 'Without'}</span>
               <span className="text-[11px] font-medium">{receipt.breathe.before} µg/m³</span>
             </div>
             <div className="w-full h-3 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
@@ -194,7 +205,7 @@ export function ImpactReceipt({
           {/* "With" Bar */}
           <div className="space-y-0.5">
             <div className="flex justify-between text-xs text-[var(--muted)]">
-              <span className="font-semibold text-emerald-700 dark:text-emerald-300">With</span>
+              <span className="font-semibold text-emerald-700 dark:text-emerald-300">{t('receipt.with') || 'With'}</span>
               <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">{receipt.breathe.after} µg/m³</span>
             </div>
             <div className="w-full h-3 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
@@ -210,7 +221,7 @@ export function ImpactReceipt({
       {/* 3. Give-back line: lucide icon + "saves X kg CO₂e this week" or similar */}
       <div className="rounded-xl p-3 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-900/40">
         <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 mb-1">
-          <span>What you GIVE to the Air</span>
+          <span>{t('receipt.what_you_give') || 'What you GIVE to the Air'}</span>
           <span>{receipt.give.period || 'weekly'}</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-emerald-950 dark:text-emerald-200 font-medium">
@@ -243,7 +254,7 @@ export function ImpactReceipt({
 
         {/* Effort chip */}
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--surface-2)] text-[var(--text)] font-semibold border border-[var(--border)]">
-          <span className="text-[var(--muted)]">Effort:</span>
+          <span className="text-[var(--muted)]">{t('receipt.effort') || 'Effort:'}</span>
           {renderEffortDots(receipt.effort)}
         </span>
       </div>
@@ -255,7 +266,7 @@ export function ImpactReceipt({
           onClick={() => setShowAssumptions(!showAssumptions)}
           className="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--text)] font-semibold transition-colors cursor-pointer self-start sm:self-center"
         >
-          <span>How we calculated</span>
+          <span>{t('receipt.how_we_calculated') || 'How we calculated'}</span>
           <ChevronDown className={`w-3.5 h-3.5 transform transition-transform ${showAssumptions ? 'rotate-180' : ''}`} />
         </button>
 
@@ -272,15 +283,15 @@ export function ImpactReceipt({
           {done ? (
             <>
               <CheckCircle className="w-4 h-4 text-emerald-700 dark:text-emerald-300" />
-              <span>In your plan</span>
+              <span>{t('receipt.in_your_plan') || 'In your plan'}</span>
             </>
           ) : (
             <>
               <Zap className="w-4 h-4" />
-              <span>Add to my plan</span>
+              <span>{t('receipt.add_to_plan') || 'Add to my plan'}</span>
             </>
           )}
-          <span className="sr-only">Mark done</span>
+          <span className="sr-only">{t('receipt.mark_done') || 'Mark done'}</span>
         </button>
       </div>
 

@@ -93,7 +93,7 @@ export function WelcomeScreen({ onStartSetup, onTryDemo }: WelcomeScreenProps) {
 
   return (
     <div className="fixed inset-0 z-[60] bg-[var(--bg)] min-h-dvh overflow-y-auto flex flex-col justify-between items-center px-4 py-6 sm:py-10">
-      {/* Top Header / Brand */}
+      {/* Top Header / Brand & Accessible Language Selector Grid */}
       <div className="flex flex-col items-center gap-1 w-full max-w-md">
         <div className="flex items-center gap-2">
           <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text)]">
@@ -101,40 +101,43 @@ export function WelcomeScreen({ onStartSetup, onTryDemo }: WelcomeScreenProps) {
           </span>
         </div>
         <p className="text-xs uppercase tracking-widest text-[var(--muted)] font-semibold">
-          Your Family&apos;s Air Coach
+          {t('welcome.subtitle') || "Your Family's Air Coach"}
         </p>
 
-        {/* 1. Language Preference Bar (Asked right at the start!) */}
-        <div className="w-full mt-3 p-3 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs">
-          <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold text-[var(--text)]">
-            <Globe size={14} className="text-[var(--primary)]" />
-            <span>Select Language / भाषा चुनें:</span>
-          </div>
-
-          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-            {SUPPORTED_LANGUAGES.map((l) => {
-              const active = language === l.code;
-              return (
-                <button
-                  key={l.code}
-                  type="button"
-                  onClick={() => updateLanguage(l.code)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
-                    active
-                      ? 'bg-[var(--primary)] text-[var(--on-primary)] shadow-xs'
-                      : 'bg-[var(--surface-2)] text-[var(--text)] hover:bg-[var(--border)]'
-                  }`}
-                >
-                  {active && <Check size={12} strokeWidth={3} />}
-                  <span>{l.native}</span>
-                </button>
-              );
-            })}
-          </div>
+        {/* 1. Prominent High-Contrast Native Script Pill Grid */}
+        <p className="mt-3 text-xs font-semibold text-[var(--muted)]">
+          {t('welcome.select_language')}
+        </p>
+        <div
+          role="radiogroup"
+          aria-label={t('welcome.select_language') || 'Select Language'}
+          className="w-full grid grid-cols-3 gap-2 my-3"
+        >
+          {SUPPORTED_LANGUAGES.map((lang) => {
+            const active = language === lang.code;
+            return (
+              <button
+                key={lang.code}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                aria-label={lang.label}
+                onClick={() => updateLanguage(lang.code)}
+                className={`px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  active
+                    ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400 font-bold'
+                    : 'bg-slate-800/80 text-slate-100 hover:bg-slate-700 font-medium border border-slate-700/60'
+                }`}
+              >
+                {active && <Check size={14} strokeWidth={3} className="shrink-0" />}
+                <span>{lang.nativeLabel || lang.native}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* 2. City Selector on Welcome Screen */}
-        <div className="w-full mt-2">
+        <div className="w-full mt-1">
           {!isChangingCity ? (
             <button
               type="button"
@@ -143,11 +146,11 @@ export function WelcomeScreen({ onStartSetup, onTryDemo }: WelcomeScreenProps) {
             >
               <div className="flex items-center gap-2">
                 <MapPin size={15} className="text-[var(--primary)]" />
-                <span className="text-[var(--muted)]">City:</span>
+                <span className="text-[var(--muted)]">{t('welcome.city') || 'City:'}</span>
                 <span className="font-bold text-[var(--text)]">{cityName}</span>
               </div>
               <span className="text-[11px] font-semibold text-[var(--primary)] group-hover:underline">
-                Change City
+                {t('welcome.change_city') || 'Change City'}
               </span>
             </button>
           ) : (
@@ -166,11 +169,14 @@ export function WelcomeScreen({ onStartSetup, onTryDemo }: WelcomeScreenProps) {
       <div className="flex flex-col items-center text-center max-w-lg my-auto py-4 space-y-4">
         <div className="space-y-1.5">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text)] tracking-tight leading-tight">
-            Know your air. <br className="hidden sm:inline" />
-            <span className="text-[var(--primary)]">Act on it.</span>
+            {t('welcome.hero_title_line1') || 'Know your air.'} <br className="hidden sm:inline" />
+            <span className="text-[var(--primary)]">
+              {t('welcome.hero_title_line2') || 'Act on it.'}
+            </span>
           </h1>
           <p className="text-xs sm:text-sm text-[var(--muted)] font-medium">
-            Air quality in {cityName} is {whoMultiple}× the WHO safe guideline today
+            {t('welcome.who_status', { city: cityName, multiple: whoMultiple }) ||
+              `Air quality in ${cityName} is ${whoMultiple}× the WHO safe guideline today`}
           </p>
         </div>
 
@@ -194,7 +200,7 @@ export function WelcomeScreen({ onStartSetup, onTryDemo }: WelcomeScreenProps) {
           className="w-full py-3.5 px-6 rounded-[var(--radius-card)] bg-[var(--primary)] text-[var(--on-primary)] font-semibold flex items-center justify-center gap-3 shadow-md hover:opacity-95 active:scale-[0.99] transition-all text-sm sm:text-base min-h-[48px] cursor-pointer"
         >
           <Users size={20} />
-          <span>Set up my family&apos;s plan</span>
+          <span>{t('welcome.setup_btn') || "Set up my family's plan"}</span>
         </button>
 
         <button
@@ -203,7 +209,7 @@ export function WelcomeScreen({ onStartSetup, onTryDemo }: WelcomeScreenProps) {
           className="w-full py-3 px-6 rounded-[var(--radius-card)] bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] font-semibold flex items-center justify-center gap-3 hover:bg-[var(--surface-2)] active:scale-[0.99] transition-all text-sm min-h-[44px] cursor-pointer"
         >
           <Zap size={18} className="text-[var(--primary)]" />
-          <span>Try a demo family (Delhi Severe Smog)</span>
+          <span>{t('welcome.demo_btn') || 'Try a demo family (Delhi Severe Smog)'}</span>
         </button>
       </div>
     </div>

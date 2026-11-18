@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslation } from '@/lib/i18n';
 
 export interface AirRingProps {
   aqi: number;
@@ -105,7 +106,10 @@ export function AirRing({
   size = 200,
   className = '',
 }: AirRingProps) {
+  const { t } = useTranslation();
   const meta = getAqiMeta(aqi);
+  const localizedBand = t('aqi.' + meta.band);
+  const displayBandLabel = localizedBand !== 'aqi.' + meta.band ? localizedBand : meta.label;
 
   // SVG Geometry
   const strokeWidth = 14;
@@ -123,7 +127,7 @@ export function AirRing({
   return (
     <div
       role="region"
-      aria-label={`Air Quality Index gauge: AQI ${aqi}, ${meta.label}, PM2.5 ${pm25} µg/m³, ${multiple} times WHO guideline.`}
+      aria-label={`Air Quality Index gauge: AQI ${aqi}, ${displayBandLabel}, PM2.5 ${pm25} µg/m³, ${multiple} times WHO guideline.`}
       className={`flex flex-col items-center justify-center p-4 text-center select-none ${className}`}
     >
       {/* SVG Ring Gauge */}
@@ -162,7 +166,7 @@ export function AirRing({
             className="text-[11px] font-bold px-2.5 py-0.5 rounded-full max-w-[150px] truncate mb-0.5"
             style={{ backgroundColor: `${meta.color}18`, color: meta.color }}
           >
-            {meta.label}
+            {displayBandLabel}
           </span>
 
           <span
@@ -173,7 +177,7 @@ export function AirRing({
           </span>
 
           <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-            {isIndoor ? 'Indoor AQI' : label || 'US AQI'}
+            {isIndoor ? (t('air.indoor_gauge_label') || 'Indoor AQI') : label || t('air.gauge_label') || 'US AQI'}
           </span>
         </div>
       </div>

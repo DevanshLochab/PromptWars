@@ -3,6 +3,7 @@
 import React from 'react';
 import { Member, AgeBandEnum, HealthConditionEnum } from '@/lib/schemas';
 import { z } from 'zod';
+import { useTranslation } from '@/lib/i18n';
 
 export type AgeBand = z.infer<typeof AgeBandEnum>;
 export type HealthCondition = z.infer<typeof HealthConditionEnum>;
@@ -38,6 +39,7 @@ export function MemberTabs({
   onChange,
   className = '',
 }: MemberTabsProps) {
+  const { t } = useTranslation();
   if (!members || members.length === 0) {
     return null;
   }
@@ -46,9 +48,9 @@ export function MemberTabs({
     <div className={`space-y-2 ${className}`}>
       <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
         <span className="font-semibold text-slate-700 dark:text-slate-300">
-          Household Members ({members.length})
+          {t('members.household_count', { count: members.length }) || `Household Members (${members.length})`}
         </span>
-        <span>Select member for personalized risk profile</span>
+        <span>{t('members.select_member') || 'Select member for personalized risk profile'}</span>
       </div>
 
       <div

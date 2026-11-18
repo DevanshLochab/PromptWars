@@ -42,7 +42,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const profile = parseResult.data;
+    const profile = {
+      ...parseResult.data,
+      language: body.language || parseResult.data.language || 'en',
+    };
     const isDemoMode =
       process.env.DEMO_MODE === 'true' ||
       process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||

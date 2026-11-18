@@ -15,6 +15,7 @@ export interface CallGeminiOptions<T> {
   responseMimeType?: string;
   timeout?: number;
   temperature?: number;
+  language?: string;
 }
 
 // In-memory rate limiter: maximum 30 requests per minute
@@ -96,8 +97,29 @@ async function executeGeminiCall<T>(
         abortSignal: abortController.signal,
       };
 
-      if (options.systemInstruction) {
-        config.systemInstruction = options.systemInstruction;
+      const langMap: Record<string, string> = {
+        en: 'English',
+        hi: 'Hindi (हिन्दी)',
+        bn: 'Bengali (বাংলা)',
+        mr: 'Marathi (मराठी)',
+        te: 'Telugu (తెలుగు)',
+        ta: 'Tamil (தமிழ்)',
+        gu: 'Gujarati (ગુજરાતી)',
+        kn: 'Kannada (ಕನ್ನಡ)',
+        pa: 'Punjabi (ਪੰਜਾਬੀ)',
+      };
+
+      let finalSystemInstruction = options.systemInstruction;
+      if (options.language && options.language !== 'en') {
+        const langName = langMap[options.language] || options.language;
+        const localizationNotice = `\n\nCRITICAL ACCESSIBILITY & LOCALIZATION REQUIREMENT:\nThe user's selected language is ${langName} (${options.language}). You MUST generate all user-facing content, answers, action titles, explanations, and advice naturally in ${langName} using its native script. Do not output English for user-facing guidance.`;
+        finalSystemInstruction = finalSystemInstruction
+          ? finalSystemInstruction + localizationNotice
+          : localizationNotice.trim();
+      }
+
+      if (finalSystemInstruction) {
+        config.systemInstruction = finalSystemInstruction;
       }
 
       if (options.tools && options.tools.length > 0) {
